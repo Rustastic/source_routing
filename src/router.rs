@@ -1,6 +1,6 @@
 use wg_2024::network::NodeId;
 
-use crate::flood_requester::{FloodRequester, neighbour::NeighBour};
+use crate::flood_requester::{neighbour::NeighBour, FloodRequester};
 
 #[derive(Debug)]
 struct Router<'a> {
