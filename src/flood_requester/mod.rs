@@ -1,4 +1,7 @@
-use std::{cell::RefCell, collections::{HashMap, HashSet}};
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+};
 
 use neighbour::NeighBour;
 use wg_2024::{
@@ -6,7 +9,10 @@ use wg_2024::{
     packet::{FloodRequest, Packet, PacketType},
 };
 
-use crate::error::{Result, RouterError::{IdNotFound, IdAlreadyPresent}};
+use crate::error::{
+    Result,
+    RouterError::{IdAlreadyPresent, IdNotFound},
+};
 
 pub mod neighbour;
 
@@ -33,10 +39,14 @@ impl<'a> FloodRequester<'a> {
         }
     }
     /// send a `flood request` only to `id`
-    /// # Returns 
+    /// # Returns
     /// - `IdNotFound` if the `id` is not in the neighbours
     pub fn flood_with_id(&self, id: NodeId) -> Result<()> {
-        let target = self.neighbours.iter().find(|&n| n.id() == id).ok_or(IdNotFound { id })?;
+        let target = self
+            .neighbours
+            .iter()
+            .find(|&n| n.id() == id)
+            .ok_or(IdNotFound { id })?;
         let flood_request = self.create_request();
         let packet = flood_request_to_packet(flood_request);
         target.send_request(packet);
@@ -46,28 +56,28 @@ impl<'a> FloodRequester<'a> {
     ///  Does not preserve the order of the vec
     pub fn remove_neighbour(&mut self, id: NodeId) -> Result<()> {
         if let Some(index) = self.neighbours.iter().position(|i| id == i.id()) {
-            self.neighbours.swap_remove(index) ;
+            self.neighbours.swap_remove(index);
             Ok(())
         } else {
             Err(IdNotFound { id })
         }
     }
     /// # Return
-    /// - `Err(IdAlreadyPresent)` with `node_type` set to `NodeType::Drone` 
+    /// - `Err(IdAlreadyPresent)` with `node_type` set to `NodeType::Drone`
     ///   (assuming a client does not have neighbours not Drone)
     /// - `Ok(())` : otherwise
     pub fn add_neighbour(&mut self, neighbour: NeighBour<'a>) -> Result<()> {
         if self.contains_id(neighbour.id()) {
-            return Err(IdAlreadyPresent{
+            return Err(IdAlreadyPresent {
                 id: neighbour.id(),
                 node_type: wg_2024::packet::NodeType::Drone,
-            })
-        } 
+            });
+        }
         self.neighbours.push(neighbour);
         Ok(())
     }
     fn contains_id(&self, id: NodeId) -> bool {
-        self.neighbours.iter().any(|n| n.id() == id )
+        self.neighbours.iter().any(|n| n.id() == id)
     }
     fn create_request(&self) -> FloodRequest {
         let flood_id = self

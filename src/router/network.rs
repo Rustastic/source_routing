@@ -1,11 +1,17 @@
-use std::{collections::HashMap, path};
-
+use std::{
+    collections::{BinaryHeap, HashMap, HashSet, VecDeque},
+    vec,
+};
 use wg_2024::{network::NodeId, packet::NodeType};
-
 use crate::error::{
     Result,
-    RouterError::{IdAlreadyPresent, IdNotFound, RemoveSelfErr},
+    RouterError::{IdAlreadyPresent, IdNotFound, ParentsMalformed, RemoveSelfErr, RouteNotFound},
 };
+
+pub type Path = Vec<NodeId>;
+
+#[cfg(test)]
+mod test;
 
 #[derive(Debug)]
 pub struct Network {
@@ -39,11 +45,46 @@ impl Network {
             if (!self.contains_id(id2)) {
                 self.add_empty_node(id2, type2);
             }
-            self.add_link(id1, id2).inspect_err(|_e|todo!("send to sim controller"));
+            self.add_link(id1, id2)
+                .inspect_err(|_e| todo!("send to sim controller"));
         }
     }
     pub fn contains_id(&self, key: NodeId) -> bool {
         self.network.contains_key(&key)
+    }
+
+    pub fn get_routes(&self, destination: NodeId) -> Result<Path> {
+        let parents = self.bfs().or(Err(RouteNotFound { destination }))?;
+        let path = parents_to_path(&parents, destination)?;
+        Ok(path)
+    }
+    /// Compute vector of parent of the network starting from the root
+    /// # Returns
+    /// - `Ok(HashMap<u,v>)` : `v` is the father of `u`
+    /// - `Err(IdNotFound)` : if the network refer to a node no longer in the network
+    ///     TODO: add a fn to rebalance the network
+    fn bfs(&self) -> Result<HashMap<NodeId, Option<NodeId>>> {
+        let mut queue = VecDeque::new();
+        queue.push_back(self.root);
+
+        let mut visited = HashSet::new();
+        visited.insert(&self.root);
+
+        let mut parents = HashMap::new();
+        parents.insert(self.root, None);
+
+        while !queue.is_empty() {
+            let u = queue.pop_front().unwrap_or_else(|| unreachable!());
+            for v in &self.get(u)?.neighbours {
+                if !visited.contains(&v) {
+                    parents.insert(*v, Some(u));
+                    visited.insert(v);
+                    queue.push_back(*v);
+                }
+            }
+        }
+
+        Ok(parents)
     }
     /// Add a node without neighbours to the network
     fn add_empty_node(&mut self, id: NodeId, node_type: NodeType) -> Result<()> {
@@ -85,6 +126,24 @@ impl Network {
         }
         Ok(id)
     }
+}
+/// Returns a path from the vector of parents
+/// # Returns
+/// - `ParentsMalformed` if the vector of parents is malformed
+fn parents_to_path(
+    parents: &HashMap<NodeId, Option<NodeId>>,
+    destination: NodeId,
+) -> Result<Path> {
+    let mut path = vec![destination];
+    let current = &destination;
+    while let Some(current) = parents.get(current).ok_or(ParentsMalformed {
+        parents: parents.clone(),
+        destination,
+    })? {
+        path.push(*current);
+    }
+    path.reverse();
+    Ok(path)
 }
 
 #[allow(clippy::module_name_repetitions)]
