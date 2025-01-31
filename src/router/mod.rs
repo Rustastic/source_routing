@@ -1,6 +1,6 @@
 use network::Network;
 use wg_2024::{
-    network::NodeId,
+    network::{NodeId, SourceRoutingHeader},
     packet::{FloodResponse, NodeType},
 };
 
@@ -31,7 +31,13 @@ impl<'a> Router<'a> {
             requester,
         }
     }
-    pub fn receveid_flood_response(&mut self, resp: &FloodResponse) {
+    pub fn received_flood_response(&mut self, resp: &FloodResponse) {
         self.network.update_from_path_trace(&resp.path_trace);
     }
+    pub fn get_source_routing_header(&self, destination: NodeId) -> SourceRoutingHeader {
+        let path = self.network.get_routes(destination);
+        let header = SourceRoutingHeader::initialize(path) ;
+        header.without_loops()
+    }
+    
 }

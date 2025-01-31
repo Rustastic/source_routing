@@ -1,5 +1,4 @@
 #![allow(dead_code)]
-#![allow(unused)]
 
 mod error;
 mod flood_requester;

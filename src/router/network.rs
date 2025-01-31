@@ -1,7 +1,6 @@
-use std::{
-    collections::{BinaryHeap, HashMap, HashSet, VecDeque},
-    vec,
-};
+use std::
+    collections::{HashMap, HashSet, VecDeque}
+;
 use wg_2024::{network::NodeId, packet::NodeType};
 use crate::error::{
     Result,
@@ -35,29 +34,37 @@ impl Network {
     pub fn get_mut(&mut self, id: NodeId) -> Result<&mut NetworkNode> {
         self.network.get_mut(&id).ok_or(IdNotFound { id })
     }
+    pub fn contains_id(&self, key: NodeId) -> bool {
+        self.network.contains_key(&key)
+    }
     pub fn update_from_path_trace(&mut self, path_trace: &[(NodeId, NodeType)]) {
         for i in 0..path_trace.len() - 1 {
             let (id1, type1) = path_trace[i];
             let (id2, type2) = path_trace[i + 1];
-            if (!self.contains_id(id1)) {
-                self.add_empty_node(id1, type1);
+            if !self.contains_id(id1) {
+                let _ = self.add_empty_node(id1, type1);
             }
-            if (!self.contains_id(id2)) {
-                self.add_empty_node(id2, type2);
+            if !self.contains_id(id2) {
+                let _ = self.add_empty_node(id2, type2);
             }
-            self.add_link(id1, id2)
-                .inspect_err(|_e| unreachable!());
+            let _ = self.add_link(id1, id2);
         }
     }
-    pub fn contains_id(&self, key: NodeId) -> bool {
-        self.network.contains_key(&key)
-    }
-
     pub fn get_routes(&self, destination: NodeId) -> Result<Path> {
         let parents = self.bfs().or(Err(RouteNotFound { destination }))?;
         let path = parents_to_path(&parents, destination)?;
         Ok(path)
     }
+
+    // fn try_fix_network(&mut self) {
+    //     for ref mut v in self.network.values(){
+    //         for &id in &v.neighbours {
+    //             if !self.contains_id(id) {
+    //                 v.remove_neighbour(id);
+    //             }
+    //         }
+    //     }
+    // }
     /// Compute vector of parent of the network starting from the root
     /// # Returns
     /// - `Ok(HashMap<u,v>)` : `v` is the father of `u`
@@ -83,10 +90,11 @@ impl Network {
                 }
             }
         }
-
         Ok(parents)
     }
     /// Add a node without neighbours to the network
+    /// # Returns
+    /// - `Err(IdAlreadyPresent)` if the id is already in the network
     fn add_empty_node(&mut self, id: NodeId, node_type: NodeType) -> Result<()> {
         if self.network.contains_key(&id) {
             return Err(IdAlreadyPresent { id, node_type });
@@ -115,7 +123,7 @@ impl Network {
     /// # Returns
     /// - `Err(RemoveSelfErr)` if the id is the root
     /// - `Err(IdNotFound)`
-    /// - `Some(id)` id the node deleted
+    /// - `Ok(id)` id the node deleted
     fn remove_node(&mut self, id: NodeId) -> Result<NodeId> {
         if self.root == id {
             return Err(RemoveSelfErr);
@@ -129,7 +137,7 @@ impl Network {
 }
 /// Returns a path from the vector of parents
 /// # Returns
-/// - `ParentsMalformed` if the vector of parents is malformed
+/// - `Err(ParentsMalformed)` if the vector of parents is malformed
 fn parents_to_path(
     parents: &HashMap<NodeId, Option<NodeId>>,
     destination: NodeId,
