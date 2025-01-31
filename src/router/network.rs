@@ -46,7 +46,7 @@ impl Network {
                 self.add_empty_node(id2, type2);
             }
             self.add_link(id1, id2)
-                .inspect_err(|_e| todo!("send to sim controller"));
+                .inspect_err(|_e| unreachable!());
         }
     }
     pub fn contains_id(&self, key: NodeId) -> bool {
@@ -135,12 +135,13 @@ fn parents_to_path(
     destination: NodeId,
 ) -> Result<Path> {
     let mut path = vec![destination];
-    let current = &destination;
-    while let Some(current) = parents.get(current).ok_or(ParentsMalformed {
+    let mut current = &destination;
+    while let Some(parent) = parents.get(current).ok_or(ParentsMalformed {
         parents: parents.clone(),
         destination,
     })? {
-        path.push(*current);
+        path.push(*parent);
+        current = parent;
     }
     path.reverse();
     Ok(path)
