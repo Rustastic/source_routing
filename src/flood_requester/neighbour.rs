@@ -2,13 +2,13 @@ use crossbeam_channel::Sender;
 use wg_2024::{network::NodeId, packet::Packet};
 
 #[derive(Debug)]
-pub struct NeighBour<'a> {
+pub struct NeighBour {
     id: NodeId,
-    sender: &'a Sender<Packet>,
+    sender: Sender<Packet>,
 }
 
-impl<'a> NeighBour<'a> {
-    pub fn new(id: NodeId, sender: &'a Sender<Packet>) -> Self {
+impl NeighBour {
+    pub fn new(id: NodeId, sender: Sender<Packet>) -> Self {
         Self { id, sender }
     }
     pub fn send_request(&self, request: Packet) {

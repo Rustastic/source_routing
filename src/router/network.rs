@@ -1,10 +1,12 @@
-use std::{cell::RefCell, collections::{HashMap, HashSet, VecDeque}}
-;
-use wg_2024::{network::NodeId, packet::NodeType};
 use crate::error::{
     Result,
     RouterError::{IdAlreadyPresent, IdNotFound, ParentsMalformed, RemoveSelfErr, RouteNotFound},
 };
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet, VecDeque},
+};
+use wg_2024::{network::NodeId, packet::NodeType};
 
 pub type Path = Vec<NodeId>;
 
@@ -26,12 +28,12 @@ impl Network {
     /// # Returns:
     /// - `Err(IdNotFound)`
     pub fn get(&self, id: NodeId) -> Result<&NetworkNode> {
-        self.network.get(&id).ok_or(IdNotFound { id })
+        self.network.get(&id).ok_or(IdNotFound(id))
     }
     /// # Returns:
     /// - `Err(IdNotFound)`
     pub fn get_mut(&mut self, id: NodeId) -> Result<&mut NetworkNode> {
-        self.network.get_mut(&id).ok_or(IdNotFound { id })
+        self.network.get_mut(&id).ok_or(IdNotFound(id))
     }
     pub fn contains_id(&self, key: NodeId) -> bool {
         self.network.contains_key(&key)
@@ -49,14 +51,16 @@ impl Network {
             let _ = self.add_link(id1, id2);
         }
     }
+    /// # Returns
+    /// - `Err(RouteNotFound)` if the destionation is unreachable
     pub fn get_routes(&self, destination: NodeId) -> Result<Path> {
         let parents = self.bfs().or(Err(RouteNotFound { destination }))?;
         let path = parents_to_path(&parents, destination)?;
         Ok(path)
     }
     /// Remove every neighbour that is no longer in the network
-    fn try_fix_network(&mut self) {
-        for node in self.network.values(){
+    pub fn try_fix_network(&mut self) {
+        for node in self.network.values() {
             for &id in node.neighbours.borrow().iter() {
                 if !self.contains_id(id) {
                     node.remove_neighbour(id);
@@ -105,15 +109,15 @@ impl Network {
     /// - `Err(IdNotFound)` if one of ithe ids is not in the network
     fn add_link(&mut self, id1: NodeId, id2: NodeId) -> Result<()> {
         if !self.contains_id(id2) {
-            return Err(IdNotFound { id: id2 });
+            return Err(IdNotFound(id2));
         }
         self.network
             .get_mut(&id1)
-            .ok_or(IdNotFound { id: id1 })?
+            .ok_or(IdNotFound(id1))?
             .add_neighbour(id2);
         self.network
             .get_mut(&id2)
-            .ok_or(IdNotFound { id: id2 })?
+            .ok_or(IdNotFound(id2))?
             .add_neighbour(id1);
         Ok(())
     }
@@ -126,7 +130,7 @@ impl Network {
         if self.root == id {
             return Err(RemoveSelfErr);
         }
-        self.network.remove(&id).ok_or(IdNotFound { id })?;
+        self.network.remove(&id).ok_or(IdNotFound(id))?;
         for v in self.network.values_mut() {
             v.remove_neighbour(id);
         }
@@ -136,10 +140,7 @@ impl Network {
 /// Returns a path from the vector of parents
 /// # Returns
 /// - `Err(ParentsMalformed)` if the vector of parents is malformed
-fn parents_to_path(
-    parents: &HashMap<NodeId, Option<NodeId>>,
-    destination: NodeId,
-) -> Result<Path> {
+fn parents_to_path(parents: &HashMap<NodeId, Option<NodeId>>, destination: NodeId) -> Result<Path> {
     let mut path = vec![destination];
     let mut current = &destination;
     while let Some(parent) = parents.get(current).ok_or(ParentsMalformed {

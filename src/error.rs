@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-
 use wg_2024::{network::NodeId, packet::NodeType};
 
 pub type Result<T> = std::result::Result<T, RouterError>;
@@ -7,14 +6,12 @@ pub type Result<T> = std::result::Result<T, RouterError>;
 #[derive(Debug)]
 #[allow(clippy::module_name_repetitions)]
 pub enum RouterError {
-    IdNotFound {
-        id: NodeId,
-    },
+    IdNotFound(NodeId),
+    RemoveSelfErr,
     IdAlreadyPresent {
         id: NodeId,
         node_type: NodeType,
     },
-    RemoveSelfErr,
     RouteNotFound {
         destination: NodeId,
     },

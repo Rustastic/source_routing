@@ -1,29 +1,25 @@
-use std::
-    cell::RefCell
-;
-
+use crate::error::{
+    Result,
+    RouterError::{IdAlreadyPresent, IdNotFound},
+};
 use neighbour::NeighBour;
+use std::cell::RefCell;
 use wg_2024::{
     network::{NodeId, SourceRoutingHeader},
     packet::{FloodRequest, Packet, PacketType},
 };
 
-use crate::error::{
-    Result,
-    RouterError::{IdAlreadyPresent, IdNotFound},
-};
-
 pub mod neighbour;
 
 #[derive(Debug)]
-pub struct FloodRequester<'a> {
-    neighbours: Vec<NeighBour<'a>>,
+pub struct FloodRequester {
+    neighbours: Vec<NeighBour>,
     flood_ids: RefCell<Vec<u64>>,
     id: NodeId,
 }
 
-impl<'a> FloodRequester<'a> {
-    pub fn new(neighbour_channel: Vec<NeighBour<'a>>, id: NodeId) -> Self {
+impl FloodRequester {
+    pub fn new(neighbour_channel: Vec<NeighBour>, id: NodeId) -> Self {
         Self {
             neighbours: neighbour_channel,
             flood_ids: RefCell::new(Vec::new()),
@@ -45,7 +41,7 @@ impl<'a> FloodRequester<'a> {
             .neighbours
             .iter()
             .find(|&n| n.id() == id)
-            .ok_or(IdNotFound { id })?;
+            .ok_or(IdNotFound(id))?;
         let flood_request = self.create_request();
         let packet = flood_request_to_packet(flood_request);
         target.send_request(packet);
@@ -58,14 +54,14 @@ impl<'a> FloodRequester<'a> {
             self.neighbours.swap_remove(index);
             Ok(())
         } else {
-            Err(IdNotFound { id })
+            Err(IdNotFound(id))
         }
     }
     /// # Return
     /// - `Err(IdAlreadyPresent)` with `node_type` set to `NodeType::Drone`
     ///   (assuming a client does not have neighbours not Drone)
     /// - `Ok(())` : otherwise
-    pub fn add_neighbour(&mut self, neighbour: NeighBour<'a>) -> Result<()> {
+    pub fn add_neighbour(&mut self, neighbour: NeighBour) -> Result<()> {
         if self.contains_id(neighbour.id()) {
             return Err(IdAlreadyPresent {
                 id: neighbour.id(),
