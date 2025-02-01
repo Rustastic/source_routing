@@ -1,5 +1,4 @@
-use std::
-    collections::{HashMap, HashSet, VecDeque}
+use std::{cell::RefCell, collections::{HashMap, HashSet, VecDeque}}
 ;
 use wg_2024::{network::NodeId, packet::NodeType};
 use crate::error::{
@@ -55,38 +54,37 @@ impl Network {
         let path = parents_to_path(&parents, destination)?;
         Ok(path)
     }
-
-    // fn try_fix_network(&mut self) {
-    //     for ref mut v in self.network.values(){
-    //         for &id in &v.neighbours {
-    //             if !self.contains_id(id) {
-    //                 v.remove_neighbour(id);
-    //             }
-    //         }
-    //     }
-    // }
+    /// Remove every neighbour that is no longer in the network
+    fn try_fix_network(&mut self) {
+        for node in self.network.values(){
+            for &id in node.neighbours.borrow().iter() {
+                if !self.contains_id(id) {
+                    node.remove_neighbour(id);
+                }
+            }
+        }
+    }
     /// Compute vector of parent of the network starting from the root
     /// # Returns
     /// - `Ok(HashMap<u,v>)` : `v` is the father of `u`
     /// - `Err(IdNotFound)` : if the network refer to a node no longer in the network
-    ///     TODO: add a fn to rebalance the network
     fn bfs(&self) -> Result<HashMap<NodeId, Option<NodeId>>> {
         let mut queue = VecDeque::new();
         queue.push_back(self.root);
 
         let mut visited = HashSet::new();
-        visited.insert(&self.root);
+        visited.insert(self.root);
 
         let mut parents = HashMap::new();
         parents.insert(self.root, None);
 
         while !queue.is_empty() {
             let u = queue.pop_front().unwrap_or_else(|| unreachable!());
-            for v in &self.get(u)?.neighbours {
+            for &v in self.get(u)?.neighbours.borrow().iter() {
                 if !visited.contains(&v) {
-                    parents.insert(*v, Some(u));
+                    parents.insert(v, Some(u));
                     visited.insert(v);
-                    queue.push_back(*v);
+                    queue.push_back(v);
                 }
             }
         }
@@ -158,36 +156,39 @@ fn parents_to_path(
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug)]
 pub struct NetworkNode {
-    neighbours: Vec<NodeId>,
+    neighbours: RefCell<Vec<NodeId>>,
     node_type: NodeType,
 }
 
 impl NetworkNode {
     fn new(node_type: NodeType) -> Self {
         Self {
-            neighbours: Vec::new(),
+            neighbours: RefCell::new(Vec::new()),
             node_type,
         }
     }
     /// # Note
     /// Does not check if the id is valid, so you have to ensure that the id is already in the network
-    fn add_neighbour(&mut self, id: NodeId) {
-        self.neighbours.push(id);
+    fn add_neighbour(&self, id: NodeId) {
+        self.neighbours.borrow_mut().push(id);
     }
     /// Add some ids to the neightbours calling `std::vec::reserve()` before
     /// # Note
     /// Does not check if the ids are valid, so you have to ensure that the ids are already in the network
-    fn bulk_add_neighbours(&mut self, ids: Vec<NodeId>) {
-        self.neighbours.reserve(ids.len());
+    fn bulk_add_neighbours(&self, ids: Vec<NodeId>) {
+        self.neighbours.borrow_mut().reserve(ids.len());
         for id in ids {
             self.add_neighbour(id);
         }
     }
     /// # Note
     /// Does not preserve order in the vector
-    fn remove_neighbour(&mut self, id: NodeId) {
-        if let Some(index) = self.neighbours.iter().position(|&i| i == id) {
-            self.neighbours.swap_remove(index);
+    fn remove_neighbour(&self, id: NodeId) {
+        // if let Some(index) = self.neighbours.iter().position(|&i| i == id) {
+        //     self.neighbours.swap_remove(index);
+        // }
+        if let Some(index) = self.neighbours.borrow().iter().position(|&i| i == id) {
+            self.neighbours.borrow_mut().swap_remove(index);
         }
     }
 }

@@ -34,10 +34,12 @@ impl<'a> Router<'a> {
     pub fn received_flood_response(&mut self, resp: &FloodResponse) {
         self.network.update_from_path_trace(&resp.path_trace);
     }
-    pub fn get_source_routing_header(&self, destination: NodeId) -> SourceRoutingHeader {
-        let path = self.network.get_routes(destination);
-        let header = SourceRoutingHeader::initialize(path) ;
-        header.without_loops()
+    pub fn get_source_routing_header(&self, _destination: NodeId) -> SourceRoutingHeader {
+        // let path = self.network.get_routes(destination);
+        // let header = SourceRoutingHeader::initialize(path) ;
+        // header.without_loops()
+
+        todo!()
     }
     
 }
