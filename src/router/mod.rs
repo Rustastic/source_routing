@@ -1,5 +1,5 @@
 use crate::error::Result;
-use crate::flood_requester::{neighbour::NeighBour, FloodRequester};
+use flood_requester::{neighbour::NeighBour, FloodRequester};
 use network::Network;
 use wg_2024::{
     network::{NodeId, SourceRoutingHeader},
@@ -7,6 +7,7 @@ use wg_2024::{
 };
 
 mod network;
+mod flood_requester;
 
 #[derive(Debug)]
 struct Router {
@@ -31,7 +32,7 @@ impl Router {
             requester,
         }
     }
-    pub fn received_flood_response(&mut self, resp: &FloodResponse) {
+    pub fn handle_flood_response(&mut self, resp: &FloodResponse) {
         self.network.update_from_path_trace(&resp.path_trace);
     }
     pub fn get_source_routing_header(&self, destination: NodeId) -> Result<SourceRoutingHeader> {
