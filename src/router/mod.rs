@@ -2,7 +2,7 @@ use std::{collections::HashMap, vec};
 
 use crate::error::Result;
 use crossbeam_channel::Sender;
-use flood_requester::{neighbour::NeighBour, FloodRequester};
+use flood_requester::FloodRequester;
 use network::Network;
 use wg_2024::{
     network::{NodeId, SourceRoutingHeader},
@@ -13,17 +13,17 @@ mod flood_requester;
 mod network;
 
 #[derive(Debug)]
-pub struct Router {
+pub struct Router<'a> {
     id: NodeId,
     node_type: NodeType,
     network: Network,
-    requester: FloodRequester,
+    requester: FloodRequester<'a>,
 }
 
-impl Router {
+impl<'a> Router<'a> {
     //constructors
     #[must_use]
-    pub fn new_with_neighbours(id: NodeId, neighbours: Vec<NeighBour>) -> Self {
+    pub fn new_with_neighbours(id: NodeId, neighbours: &'a HashMap<NodeId, Sender<Packet>>) -> Self {
         let requester = FloodRequester::new(neighbours, id);
         let network = Network::new(id, NodeType::Client);
         Self {
@@ -33,7 +33,7 @@ impl Router {
             requester,
         }
     }
-    #[must_use]
+    /* #[must_use]
     pub fn new_with_hashmaps(id: NodeId, packet_send: HashMap<NodeId, Sender<Packet>>) -> Self {
         let mut neighbour = vec![];
         for (id, send) in packet_send {
@@ -47,10 +47,10 @@ impl Router {
             network,
             requester,
         }
-    }
+    } */
 }
 
-impl Router {
+impl Router<'_> {
     //methods
     pub fn handle_flood_response(&mut self, resp: &FloodResponse) {
         self.network.update_from_path_trace(&resp.path_trace);
@@ -77,16 +77,16 @@ impl Router {
         // let _ = self.requester.remove_neighbour(id);
         self.network.remove_node(id).map(|_| ())
     }
-    /// # Errors
+/*     /// # Errors
     /// - `Err(IdAlreadyPresent)` with `node_type` set to `NodeType::Drone`
     ///   (assuming a client does not have neighbours not Drone)
-    pub fn add_neighbour(&mut self, id: NodeId, sender: Sender<Packet>) -> Result<()> {
+    /* pub fn add_neighbour(&mut self, id: NodeId, sender: Sender<Packet>) -> Result<()> {
         let neighbour = NeighBour::new(id, sender);
         self.requester.add_neighbour(neighbour)
-    }
+    } */
     /// # Errors
     /// - `Err(IdNotFound)` if the id is not a neighbour
-    pub fn remove_neighbour(&mut self, id: NodeId) -> Result<()> {
+   /*  pub fn remove_neighbour(&mut self, id: NodeId) -> Result<()> {
         self.requester.remove_neighbour(id)
-    }
+    } */ */
 }

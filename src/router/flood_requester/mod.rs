@@ -1,84 +1,86 @@
 use crate::error::{
     Result,
-    RouterError::{IdAlreadyPresent, IdNotFound},
+    RouterError::{IdAlreadyPresent, IdNotFound, SendError},
 };
-use neighbour::NeighBour;
-use std::cell::RefCell;
+use std::{cell::RefCell, collections::HashMap};
+use crossbeam_channel::Sender;
 use wg_2024::{
     network::{NodeId, SourceRoutingHeader},
     packet::{FloodRequest, Packet, PacketType},
 };
 
-pub mod neighbour;
+// use neighbour::NeighBour;
+// pub mod neighbour;
 
 #[derive(Debug)]
-pub struct FloodRequester {
-    neighbours: Vec<NeighBour>,
+pub struct FloodRequester<'a> {
+    // neighbours: Vec<NeighBour>,
+    flood_send: &'a HashMap<NodeId, Sender<Packet>>,
     flood_ids: RefCell<Vec<u64>>,
     id: NodeId,
 }
 
-impl FloodRequester {
+impl<'a> FloodRequester<'a> {
     //constructor
-    pub fn new(neighbour_channel: Vec<NeighBour>, id: NodeId) -> Self {
+    pub fn new(neighbour_channel: &'a HashMap<NodeId, Sender<Packet>>, id: NodeId) -> Self {
         Self {
-            neighbours: neighbour_channel,
+            flood_send: neighbour_channel,
             flood_ids: RefCell::new(Vec::new()),
             id,
         }
     }
 }
 
-impl FloodRequester {
+impl FloodRequester<'_> {
     //methods
-    pub fn flood_neighbours(&self) {
-        for neighbour in &self.neighbours {
-            let flood_request = self.create_request();
-            let packet = flood_request_to_packet(flood_request);
-            neighbour.send_request(packet);
-        }
+    pub fn flood_neighbours(&self) -> Vec<Result<()>> {
+        self
+            .flood_send
+            .iter().map(|(id, sender)|{
+                let flood_request = self.create_request();
+                let packet = flood_request_to_packet(flood_request);
+                sender.send(packet)
+                .map_err(|e| Box::new(SendError { destination: *id, error: e }) )
+            })
+            .collect()
     }
     /// send a `flood request` only to `id`
     /// # Errors
     /// - `IdNotFound` if the `id` is not in the neighbours
     pub fn flood_with_id(&self, id: NodeId) -> Result<()> {
-        let target = self
-            .neighbours
-            .iter()
-            .find(|&n| n.id() == id)
-            .ok_or(IdNotFound(id))?;
         let flood_request = self.create_request();
         let packet = flood_request_to_packet(flood_request);
-        target.send_request(packet);
-        Ok(())
+        self
+        .flood_send
+        .get(&id)
+        .ok_or(IdNotFound(id))?
+        .send(packet)
+        .map_err(|e| Box::new(SendError { destination: id, error: e }) )
     }
-    /// # Note
-    ///  Does not preserve the order of the vec
     /// # Errors
     /// - `Err(IdNotFound)` if the id is not a neighbour
-    pub fn remove_neighbour(&mut self, id: NodeId) -> Result<()> {
-        if let Some(index) = self.neighbours.iter().position(|i| id == i.id()) {
-            self.neighbours.swap_remove(index);
-            Ok(())
-        } else {
-            Err(IdNotFound(id))
-        }
-    }
+    /* pub fn remove_neighbour(&mut self, id: NodeId) -> Result<()> {
+        self
+            .flood_send
+            .remove(&id)
+            .ok_or(IdNotFound(id))? ;
+        Ok(())
+    } */
     /// # Errors
     /// - `Err(IdAlreadyPresent)` with `node_type` set to `NodeType::Drone`
     ///   (assuming a client does not have neighbours not Drone)
-    pub fn add_neighbour(&mut self, neighbour: NeighBour) -> Result<()> {
+    /* pub fn add_neighbour(&mut self, neighbour: NeighBour) -> Result<()> {
         if self.contains_id(neighbour.id()) {
             return Err(IdAlreadyPresent {
                 id: neighbour.id(),
                 node_type: wg_2024::packet::NodeType::Drone,
             });
         }
-        self.neighbours.push(neighbour);
+        self.flood_send.push(neighbour);
         Ok(())
-    }
+    } */
     fn contains_id(&self, id: NodeId) -> bool {
-        self.neighbours.iter().any(|n| n.id() == id)
+        self.flood_send.contains_key(&id)
     }
     fn create_request(&self) -> FloodRequest {
         let flood_id = self

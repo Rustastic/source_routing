@@ -70,7 +70,7 @@ impl Network {
     /// - `Ok(id)` id the node deleted
     pub fn remove_node(&mut self, id: NodeId) -> Result<NodeId> {
         if self.root == id {
-            return Err(RemoveSelfErr);
+            return Err(Box::new(RemoveSelfErr));
         }
         self.network.remove(&id).ok_or(IdNotFound(id))?;
         for v in self.network.values_mut() {
@@ -109,7 +109,7 @@ impl Network {
     /// - `Err(IdAlreadyPresent)` if the id is already in the network
     fn add_empty_node(&mut self, id: NodeId, node_type: NodeType) -> Result<()> {
         if self.network.contains_key(&id) {
-            return Err(IdAlreadyPresent { id, node_type });
+            return Err(Box::new(IdAlreadyPresent { id, node_type }));
         }
         self.network.insert(id, NetworkNode::new(node_type));
         Ok(())
@@ -119,7 +119,7 @@ impl Network {
     /// - `Err(IdNotFound)` if one of ithe ids is not in the network
     fn add_link(&mut self, id1: NodeId, id2: NodeId) -> Result<()> {
         if !self.contains_id(id2) {
-            return Err(IdNotFound(id2));
+            return Err(Box::new(IdNotFound(id2)));
         }
         self.network
             .get_mut(&id1)
@@ -138,12 +138,12 @@ impl Network {
     /// # Returns:
     /// - `Err(IdNotFound)`
     pub fn get(&self, id: NodeId) -> Result<&NetworkNode> {
-        self.network.get(&id).ok_or(IdNotFound(id))
+        self.network.get(&id).ok_or(Box::new(IdNotFound(id)))
     }
     /// # Returns:
     /// - `Err(IdNotFound)`
     pub fn get_mut(&mut self, id: NodeId) -> Result<&mut NetworkNode> {
-        self.network.get_mut(&id).ok_or(IdNotFound(id))
+        self.network.get_mut(&id).ok_or(Box::new(IdNotFound(id)))
     }
 }
 
