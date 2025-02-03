@@ -1,9 +1,10 @@
 use crate::error::Result;
+use crossbeam_channel::Sender;
 use flood_requester::{neighbour::NeighBour, FloodRequester};
 use network::Network;
 use wg_2024::{
     network::{NodeId, SourceRoutingHeader},
-    packet::{FloodResponse, NodeType},
+    packet::{FloodResponse, NodeType, Packet},
 };
 
 mod flood_requester;
@@ -58,9 +59,21 @@ impl Router {
     }
     /// # Errors
     /// - `Err(RemoveSelfErr)` if the id is the root
-    /// - `Err(IdNotFound)`
+    /// - `Err(IdNotFound)` 
     pub fn drone_crashed(&mut self, id: NodeId) -> Result<()> {
-        let _ = self.requester.remove_neighbour(id);
+        // let _ = self.requester.remove_neighbour(id);
         self.network.remove_node(id).map(|_| ())
+    }
+    /// # Errors
+    /// - `Err(IdAlreadyPresent)` with `node_type` set to `NodeType::Drone`
+    ///   (assuming a client does not have neighbours not Drone)
+    pub fn add_neighbour(&mut self, id: NodeId, sender: Sender<Packet>) -> Result<()> {
+        let neighbour = NeighBour::new(id, sender) ;
+        self.requester.add_neighbour(neighbour)
+    }
+    /// # Errors
+    /// - `Err(IdNotFound)` if the id is not a neighbour
+    pub fn remove_neighbour(&mut self, id: NodeId) -> Result<()> {
+        self.requester.remove_neighbour(id) 
     }
 }

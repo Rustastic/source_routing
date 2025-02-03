@@ -39,7 +39,7 @@ impl FloodRequester {
         }
     }
     /// send a `flood request` only to `id`
-    /// # Returns
+    /// # Errors
     /// - `IdNotFound` if the `id` is not in the neighbours
     pub fn flood_with_id(&self, id: NodeId) -> Result<()> {
         let target = self
@@ -54,7 +54,7 @@ impl FloodRequester {
     }
     /// # Note
     ///  Does not preserve the order of the vec
-    /// # Returns:
+    /// # Errors
     /// - `Err(IdNotFound)` if the id is not a neighbour
     pub fn remove_neighbour(&mut self, id: NodeId) -> Result<()> {
         if let Some(index) = self.neighbours.iter().position(|i| id == i.id()) {
@@ -64,10 +64,9 @@ impl FloodRequester {
             Err(IdNotFound(id))
         }
     }
-    /// # Return
+    /// # Errors 
     /// - `Err(IdAlreadyPresent)` with `node_type` set to `NodeType::Drone`
     ///   (assuming a client does not have neighbours not Drone)
-    /// - `Ok(())` : otherwise
     pub fn add_neighbour(&mut self, neighbour: NeighBour) -> Result<()> {
         if self.contains_id(neighbour.id()) {
             return Err(IdAlreadyPresent {
