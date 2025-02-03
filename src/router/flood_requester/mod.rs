@@ -2,8 +2,8 @@ use crate::error::{
     Result,
     RouterError::{IdAlreadyPresent, IdNotFound, SendError},
 };
-use std::{cell::RefCell, collections::HashMap};
 use crossbeam_channel::Sender;
+use std::{cell::RefCell, collections::HashMap};
 use wg_2024::{
     network::{NodeId, SourceRoutingHeader},
     packet::{FloodRequest, Packet, PacketType},
@@ -34,13 +34,17 @@ impl<'a> FloodRequester<'a> {
 impl FloodRequester<'_> {
     //methods
     pub fn flood_neighbours(&self) -> Vec<Result<()>> {
-        self
-            .flood_send
-            .iter().map(|(id, sender)|{
+        self.flood_send
+            .iter()
+            .map(|(id, sender)| {
                 let flood_request = self.create_request();
                 let packet = flood_request_to_packet(flood_request);
-                sender.send(packet)
-                .map_err(|e| Box::new(SendError { destination: *id, error: e }) )
+                sender.send(packet).map_err(|e| {
+                    Box::new(SendError {
+                        destination: *id,
+                        error: e,
+                    })
+                })
             })
             .collect()
     }
@@ -50,12 +54,16 @@ impl FloodRequester<'_> {
     pub fn flood_with_id(&self, id: NodeId) -> Result<()> {
         let flood_request = self.create_request();
         let packet = flood_request_to_packet(flood_request);
-        self
-        .flood_send
-        .get(&id)
-        .ok_or(IdNotFound(id))?
-        .send(packet)
-        .map_err(|e| Box::new(SendError { destination: id, error: e }) )
+        self.flood_send
+            .get(&id)
+            .ok_or(IdNotFound(id))?
+            .send(packet)
+            .map_err(|e| {
+                Box::new(SendError {
+                    destination: id,
+                    error: e,
+                })
+            })
     }
     /// # Errors
     /// - `Err(IdNotFound)` if the id is not a neighbour

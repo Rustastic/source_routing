@@ -23,7 +23,10 @@ pub struct Router<'a> {
 impl<'a> Router<'a> {
     //constructors
     #[must_use]
-    pub fn new_with_neighbours(id: NodeId, neighbours: &'a HashMap<NodeId, Sender<Packet>>) -> Self {
+    pub fn new_with_neighbours(
+        id: NodeId,
+        neighbours: &'a HashMap<NodeId, Sender<Packet>>,
+    ) -> Self {
         let requester = FloodRequester::new(neighbours, id);
         let network = Network::new(id, NodeType::Client);
         Self {
@@ -77,16 +80,15 @@ impl Router<'_> {
         // let _ = self.requester.remove_neighbour(id);
         self.network.remove_node(id).map(|_| ())
     }
-/*     /// # Errors
+    /// # Errors
     /// - `Err(IdAlreadyPresent)` with `node_type` set to `NodeType::Drone`
     ///   (assuming a client does not have neighbours not Drone)
-    /* pub fn add_neighbour(&mut self, id: NodeId, sender: Sender<Packet>) -> Result<()> {
-        let neighbour = NeighBour::new(id, sender);
-        self.requester.add_neighbour(neighbour)
-    } */
-    /// # Errors
+    pub fn add_neighbour(&mut self, id: NodeId) -> Result<()> {
+        self.network.add_neighbour(id)
+    }
+    /* /// # Errors
     /// - `Err(IdNotFound)` if the id is not a neighbour
-   /*  pub fn remove_neighbour(&mut self, id: NodeId) -> Result<()> {
+    pub fn remove_neighbour(&mut self, id: NodeId) -> Result<()> {
         self.requester.remove_neighbour(id)
-    } */ */
+    }  */
 }

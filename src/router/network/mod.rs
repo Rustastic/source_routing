@@ -46,7 +46,7 @@ impl Network {
             let _ = self.add_link(id1, id2);
         }
     }
-    /// # Returns
+    /// # Errors
     /// - `Err(RouteNotFound)` if the destionation is unreachable
     pub fn get_routes(&self, destination: NodeId) -> Result<Path> {
         let parents = self.bfs().or(Err(RouteNotFound { destination }))?;
@@ -64,7 +64,7 @@ impl Network {
         }
     }
     /// Remove the node specified from the network
-    /// # Returns
+    /// # Errors
     /// - `Err(RemoveSelfErr)` if the id is the root
     /// - `Err(IdNotFound)`
     /// - `Ok(id)` id the node deleted
@@ -78,8 +78,15 @@ impl Network {
         }
         Ok(id)
     }
+    /// # Errors
+    /// - `IdAlreadyPresent`
+    pub fn add_neighbour(&mut self, id: NodeId) -> Result<()> {
+        self.add_empty_node(id, NodeType::Drone)?;
+        let _ = self.add_link(id, self.root);
+        Ok(())
+    }
     /// Compute vector of parent of the network starting from the root
-    /// # Returns
+    /// # Errors
     /// - `Ok(HashMap<u,v>)` : `v` is the father of `u`
     /// - `Err(IdNotFound)` : if the network refer to a node no longer in the network
     fn bfs(&self) -> Result<HashMap<NodeId, Option<NodeId>>> {
@@ -105,7 +112,7 @@ impl Network {
         Ok(parents)
     }
     /// Add a node without neighbours to the network
-    /// # Returns
+    /// # Errors
     /// - `Err(IdAlreadyPresent)` if the id is already in the network
     fn add_empty_node(&mut self, id: NodeId, node_type: NodeType) -> Result<()> {
         if self.network.contains_key(&id) {
@@ -115,7 +122,7 @@ impl Network {
         Ok(())
     }
     /// Add `(id1, id2)` and `(id2, id1)` because link are undirected
-    /// # Returns
+    /// # Errors
     /// - `Err(IdNotFound)` if one of ithe ids is not in the network
     fn add_link(&mut self, id1: NodeId, id2: NodeId) -> Result<()> {
         if !self.contains_id(id2) {
@@ -135,12 +142,12 @@ impl Network {
 
 impl Network {
     //getter/setter
-    /// # Returns:
+    /// # Errors:
     /// - `Err(IdNotFound)`
     pub fn get(&self, id: NodeId) -> Result<&NetworkNode> {
         self.network.get(&id).ok_or(Box::new(IdNotFound(id)))
     }
-    /// # Returns:
+    /// # Errors:
     /// - `Err(IdNotFound)`
     pub fn get_mut(&mut self, id: NodeId) -> Result<&mut NetworkNode> {
         self.network.get_mut(&id).ok_or(Box::new(IdNotFound(id)))
@@ -148,7 +155,7 @@ impl Network {
 }
 
 /// Returns a path from the vector of parents
-/// # Returns
+/// # Errors
 /// - `Err(ParentsMalformed)` if the vector of parents is malformed
 fn parents_to_path(parents: &HashMap<NodeId, Option<NodeId>>, destination: NodeId) -> Result<Path> {
     let mut path = vec![destination];

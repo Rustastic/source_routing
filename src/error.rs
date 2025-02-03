@@ -1,5 +1,8 @@
 use std::collections::HashMap;
-use wg_2024::{network::NodeId, packet::{NodeType, Packet}};
+use wg_2024::{
+    network::NodeId,
+    packet::{NodeType, Packet},
+};
 
 pub type Result<T> = std::result::Result<T, Box<RouterError>>;
 
@@ -22,7 +25,7 @@ pub enum RouterError {
     SendError {
         destination: NodeId,
         error: crossbeam_channel::SendError<Packet>,
-    }
+    },
 }
 
 impl std::fmt::Display for RouterError {
