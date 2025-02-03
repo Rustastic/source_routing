@@ -6,8 +6,8 @@ use wg_2024::{
     packet::{FloodResponse, NodeType},
 };
 
-mod network;
 mod flood_requester;
+mod network;
 
 #[derive(Debug)]
 struct Router {
@@ -18,6 +18,7 @@ struct Router {
 }
 
 impl Router {
+    //constructors
     pub fn new_with_neighbours(
         id: NodeId,
         node_type: NodeType,
@@ -32,6 +33,10 @@ impl Router {
             requester,
         }
     }
+}
+
+impl Router {
+    //methods
     pub fn handle_flood_response(&mut self, resp: &FloodResponse) {
         self.network.update_from_path_trace(&resp.path_trace);
     }
@@ -39,5 +44,17 @@ impl Router {
         let path = self.network.get_routes(destination)?;
         let header = SourceRoutingHeader::initialize(path);
         Ok(header.without_loops())
+    }
+    pub fn flood_neighbours(&self) {
+        self.requester.flood_neighbours();
+    }
+    /// # Returns
+    /// - `Err(IdNotFound)` if the `id` is not in the neighbour
+    pub fn flood_with_id(&self, id: NodeId) -> Result<()> {
+        self.requester.flood_with_id(id)
+    }
+    pub fn drone_crashed(&mut self, id: NodeId) -> Result<()> {
+        let _ = self.requester.remove_neighbour(id);
+        self.network.remove_node(id).map(|_| ())
     }
 }

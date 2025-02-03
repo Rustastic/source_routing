@@ -19,6 +19,7 @@ pub struct FloodRequester {
 }
 
 impl FloodRequester {
+    //constructor
     pub fn new(neighbour_channel: Vec<NeighBour>, id: NodeId) -> Self {
         Self {
             neighbours: neighbour_channel,
@@ -26,6 +27,10 @@ impl FloodRequester {
             id,
         }
     }
+}
+
+impl FloodRequester {
+    //methods
     pub fn flood_neighbours(&self) {
         for neighbour in &self.neighbours {
             let flood_request = self.create_request();
@@ -49,6 +54,8 @@ impl FloodRequester {
     }
     /// # Note
     ///  Does not preserve the order of the vec
+    /// # Returns:
+    /// - `Err(IdNotFound)` if the id is not a neighbour
     pub fn remove_neighbour(&mut self, id: NodeId) -> Result<()> {
         if let Some(index) = self.neighbours.iter().position(|i| id == i.id()) {
             self.neighbours.swap_remove(index);

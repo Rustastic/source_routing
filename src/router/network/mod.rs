@@ -20,21 +20,16 @@ pub struct Network {
 }
 
 impl Network {
+    //constructor
     pub fn new(root: NodeId, root_type: NodeType) -> Self {
         let mut network = HashMap::new();
         network.insert(root, NetworkNode::new(root_type));
         Self { root, network }
     }
-    /// # Returns:
-    /// - `Err(IdNotFound)`
-    pub fn get(&self, id: NodeId) -> Result<&NetworkNode> {
-        self.network.get(&id).ok_or(IdNotFound(id))
-    }
-    /// # Returns:
-    /// - `Err(IdNotFound)`
-    pub fn get_mut(&mut self, id: NodeId) -> Result<&mut NetworkNode> {
-        self.network.get_mut(&id).ok_or(IdNotFound(id))
-    }
+}
+
+impl Network {
+    //methods
     pub fn contains_id(&self, key: NodeId) -> bool {
         self.network.contains_key(&key)
     }
@@ -67,6 +62,21 @@ impl Network {
                 }
             }
         }
+    }
+    /// Remove the node specified from the network
+    /// # Returns
+    /// - `Err(RemoveSelfErr)` if the id is the root
+    /// - `Err(IdNotFound)`
+    /// - `Ok(id)` id the node deleted
+    pub fn remove_node(&mut self, id: NodeId) -> Result<NodeId> {
+        if self.root == id {
+            return Err(RemoveSelfErr);
+        }
+        self.network.remove(&id).ok_or(IdNotFound(id))?;
+        for v in self.network.values_mut() {
+            v.remove_neighbour(id);
+        }
+        Ok(id)
     }
     /// Compute vector of parent of the network starting from the root
     /// # Returns
@@ -121,22 +131,22 @@ impl Network {
             .add_neighbour(id1);
         Ok(())
     }
-    /// Remove the node specified from the network
-    /// # Returns
-    /// - `Err(RemoveSelfErr)` if the id is the root
+}
+
+impl Network {
+    //getter/setter
+    /// # Returns:
     /// - `Err(IdNotFound)`
-    /// - `Ok(id)` id the node deleted
-    fn remove_node(&mut self, id: NodeId) -> Result<NodeId> {
-        if self.root == id {
-            return Err(RemoveSelfErr);
-        }
-        self.network.remove(&id).ok_or(IdNotFound(id))?;
-        for v in self.network.values_mut() {
-            v.remove_neighbour(id);
-        }
-        Ok(id)
+    pub fn get(&self, id: NodeId) -> Result<&NetworkNode> {
+        self.network.get(&id).ok_or(IdNotFound(id))
+    }
+    /// # Returns:
+    /// - `Err(IdNotFound)`
+    pub fn get_mut(&mut self, id: NodeId) -> Result<&mut NetworkNode> {
+        self.network.get_mut(&id).ok_or(IdNotFound(id))
     }
 }
+
 /// Returns a path from the vector of parents
 /// # Returns
 /// - `Err(ParentsMalformed)` if the vector of parents is malformed
@@ -162,12 +172,17 @@ pub struct NetworkNode {
 }
 
 impl NetworkNode {
+    //constructor
     fn new(node_type: NodeType) -> Self {
         Self {
             neighbours: RefCell::new(Vec::new()),
             node_type,
         }
     }
+}
+
+impl NetworkNode {
+    //methods
     /// # Note
     /// Does not check if the id is valid, so you have to ensure that the id is already in the network
     fn add_neighbour(&self, id: NodeId) {
@@ -185,9 +200,6 @@ impl NetworkNode {
     /// # Note
     /// Does not preserve order in the vector
     fn remove_neighbour(&self, id: NodeId) {
-        // if let Some(index) = self.neighbours.iter().position(|&i| i == id) {
-        //     self.neighbours.swap_remove(index);
-        // }
         if let Some(index) = self.neighbours.borrow().iter().position(|&i| i == id) {
             self.neighbours.borrow_mut().swap_remove(index);
         }
