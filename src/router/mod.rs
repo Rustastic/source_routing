@@ -10,7 +10,7 @@ mod flood_requester;
 mod network;
 
 #[derive(Debug)]
-struct Router {
+pub struct Router {
     id: NodeId,
     node_type: NodeType,
     network: Network,
@@ -19,6 +19,7 @@ struct Router {
 
 impl Router {
     //constructors
+    #[must_use] 
     pub fn new_with_neighbours(
         id: NodeId,
         node_type: NodeType,
@@ -40,6 +41,8 @@ impl Router {
     pub fn handle_flood_response(&mut self, resp: &FloodResponse) {
         self.network.update_from_path_trace(&resp.path_trace);
     }
+    /// # Errors
+    /// - `Err(RouteNotFound)` if the destionation is unreachable
     pub fn get_source_routing_header(&self, destination: NodeId) -> Result<SourceRoutingHeader> {
         let path = self.network.get_routes(destination)?;
         let header = SourceRoutingHeader::initialize(path);
@@ -48,11 +51,14 @@ impl Router {
     pub fn flood_neighbours(&self) {
         self.requester.flood_neighbours();
     }
-    /// # Returns
+    /// # Errors
     /// - `Err(IdNotFound)` if the `id` is not in the neighbour
     pub fn flood_with_id(&self, id: NodeId) -> Result<()> {
         self.requester.flood_with_id(id)
     }
+    /// # Errors
+    /// - `Err(RemoveSelfErr)` if the id is the root
+    /// - `Err(IdNotFound)`
     pub fn drone_crashed(&mut self, id: NodeId) -> Result<()> {
         let _ = self.requester.remove_neighbour(id);
         self.network.remove_node(id).map(|_| ())
