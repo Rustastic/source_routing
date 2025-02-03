@@ -64,7 +64,7 @@ impl FloodRequester {
             Err(IdNotFound(id))
         }
     }
-    /// # Errors 
+    /// # Errors
     /// - `Err(IdAlreadyPresent)` with `node_type` set to `NodeType::Drone`
     ///   (assuming a client does not have neighbours not Drone)
     pub fn add_neighbour(&mut self, neighbour: NeighBour) -> Result<()> {
