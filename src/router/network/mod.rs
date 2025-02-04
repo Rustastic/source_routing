@@ -6,10 +6,12 @@ use std::{
     cell::RefCell,
     collections::{HashMap, HashSet, VecDeque},
 };
+use network_node::NetworkNode;
 use wg_2024::{network::NodeId, packet::NodeType};
 
 pub type Path = Vec<NodeId>;
 
+mod network_node;
 #[cfg(test)]
 mod test;
 
@@ -118,7 +120,8 @@ impl Network {
         if self.network.contains_key(&id) {
             return Err(Box::new(IdAlreadyPresent { id, node_type }));
         }
-        self.network.insert(id, NetworkNode::new(node_type));
+        self.network
+            .insert(id, NetworkNode::new(node_type));
         Ok(())
     }
     /// Add `(id1, id2)` and `(id2, id1)` because link are undirected
@@ -169,46 +172,4 @@ fn parents_to_path(parents: &HashMap<NodeId, Option<NodeId>>, destination: NodeI
     }
     path.reverse();
     Ok(path)
-}
-
-#[allow(clippy::module_name_repetitions)]
-#[derive(Debug)]
-pub struct NetworkNode {
-    neighbours: RefCell<Vec<NodeId>>,
-    node_type: NodeType,
-}
-
-impl NetworkNode {
-    //constructor
-    fn new(node_type: NodeType) -> Self {
-        Self {
-            neighbours: RefCell::new(Vec::new()),
-            node_type,
-        }
-    }
-}
-
-impl NetworkNode {
-    //methods
-    /// # Note
-    /// Does not check if the id is valid, so you have to ensure that the id is already in the network
-    fn add_neighbour(&self, id: NodeId) {
-        self.neighbours.borrow_mut().push(id);
-    }
-    /// Add some ids to the neightbours calling `std::vec::reserve()` before
-    /// # Note
-    /// Does not check if the ids are valid, so you have to ensure that the ids are already in the network
-    fn bulk_add_neighbours(&self, ids: Vec<NodeId>) {
-        self.neighbours.borrow_mut().reserve(ids.len());
-        for id in ids {
-            self.add_neighbour(id);
-        }
-    }
-    /// # Note
-    /// Does not preserve order in the vector
-    fn remove_neighbour(&self, id: NodeId) {
-        if let Some(index) = self.neighbours.borrow().iter().position(|&i| i == id) {
-            self.neighbours.borrow_mut().swap_remove(index);
-        }
-    }
 }

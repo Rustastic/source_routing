@@ -1,4 +1,4 @@
-use std::{collections::HashMap, vec};
+use std::{collections::HashMap, rc::Rc, vec};
 
 use crate::error::Result;
 use crossbeam_channel::Sender;
@@ -13,25 +13,26 @@ mod flood_requester;
 mod network;
 
 #[derive(Debug)]
-pub struct Router<'a> {
+pub struct Router {
     id: NodeId,
     node_type: NodeType,
     network: Network,
-    requester: FloodRequester<'a>,
+    requester: FloodRequester,
 }
 
-impl<'a> Router<'a> {
+impl Router {
     //constructors
     #[must_use]
     pub fn new_with_neighbours(
         id: NodeId,
-        neighbours: &'a HashMap<NodeId, Sender<Packet>>,
+        node_type: NodeType,
+        neighbours: &HashMap<NodeId, Sender<Packet>>,
     ) -> Self {
-        let requester = FloodRequester::new(neighbours, id);
-        let network = Network::new(id, NodeType::Client);
+        let requester = FloodRequester::new(neighbours.clone(), id);
+        let network = Network::new(id, node_type);
         Self {
             id,
-            node_type: NodeType::Client,
+            node_type,
             network,
             requester,
         }
@@ -53,7 +54,7 @@ impl<'a> Router<'a> {
     } */
 }
 
-impl Router<'_> {
+impl Router {
     //methods
     pub fn handle_flood_response(&mut self, resp: &FloodResponse) {
         self.network.update_from_path_trace(&resp.path_trace);
@@ -77,14 +78,18 @@ impl Router<'_> {
     /// - `Err(RemoveSelfErr)` if the id is the root
     /// - `Err(IdNotFound)`
     pub fn drone_crashed(&mut self, id: NodeId) -> Result<()> {
-        // let _ = self.requester.remove_neighbour(id);
-        self.network.remove_node(id).map(|_| ())
+        self.network
+            .remove_node(id)
+            .map(|_| ())
+            .and(self.requester.remove_neighbour(id))
     }
     /// # Errors
     /// - `Err(IdAlreadyPresent)` with `node_type` set to `NodeType::Drone`
     ///   (assuming a client does not have neighbours not Drone)
-    pub fn add_neighbour(&mut self, id: NodeId) -> Result<()> {
-        self.network.add_neighbour(id)
+    pub fn add_neighbour(&mut self, id: NodeId, sender: Sender<Packet>) -> Result<()> {
+        self.requester
+            .add_neighbour(id, sender)
+            .and(self.network.add_neighbour(id))
     }
     /* /// # Errors
     /// - `Err(IdNotFound)` if the id is not a neighbour

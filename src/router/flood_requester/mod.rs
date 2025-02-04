@@ -13,16 +13,16 @@ use wg_2024::{
 // pub mod neighbour;
 
 #[derive(Debug)]
-pub struct FloodRequester<'a> {
+pub struct FloodRequester {
     // neighbours: Vec<NeighBour>,
-    flood_send: &'a HashMap<NodeId, Sender<Packet>>,
+    flood_send: HashMap<NodeId, Sender<Packet>>,
     flood_ids: RefCell<Vec<u64>>,
     id: NodeId,
 }
 
-impl<'a> FloodRequester<'a> {
+impl FloodRequester {
     //constructor
-    pub fn new(neighbour_channel: &'a HashMap<NodeId, Sender<Packet>>, id: NodeId) -> Self {
+    pub fn new(neighbour_channel: HashMap<NodeId, Sender<Packet>>, id: NodeId) -> Self {
         Self {
             flood_send: neighbour_channel,
             flood_ids: RefCell::new(Vec::new()),
@@ -31,7 +31,7 @@ impl<'a> FloodRequester<'a> {
     }
 }
 
-impl FloodRequester<'_> {
+impl FloodRequester {
     //methods
     pub fn flood_neighbours(&self) -> Vec<Result<()>> {
         self.flood_send
@@ -67,26 +67,23 @@ impl FloodRequester<'_> {
     }
     /// # Errors
     /// - `Err(IdNotFound)` if the id is not a neighbour
-    /* pub fn remove_neighbour(&mut self, id: NodeId) -> Result<()> {
-        self
-            .flood_send
-            .remove(&id)
-            .ok_or(IdNotFound(id))? ;
+    pub fn remove_neighbour(&mut self, id: NodeId) -> Result<()> {
+        self.flood_send.remove(&id).ok_or(IdNotFound(id))?;
         Ok(())
-    } */
+    }
     /// # Errors
     /// - `Err(IdAlreadyPresent)` with `node_type` set to `NodeType::Drone`
-    ///   (assuming a client does not have neighbours not Drone)
-    /* pub fn add_neighbour(&mut self, neighbour: NeighBour) -> Result<()> {
-        if self.contains_id(neighbour.id()) {
-            return Err(IdAlreadyPresent {
-                id: neighbour.id(),
+    ///   (assuming a client/server does not have neighbours not Drone)
+    pub fn add_neighbour(&mut self, id: NodeId, sender: Sender<Packet>) -> Result<()> {
+        if self.contains_id(id) {
+            return Err(Box::new(IdAlreadyPresent {
+                id,
                 node_type: wg_2024::packet::NodeType::Drone,
-            });
+            }));
         }
-        self.flood_send.push(neighbour);
+        self.flood_send.insert(id, sender);
         Ok(())
-    } */
+    }
     fn contains_id(&self, id: NodeId) -> bool {
         self.flood_send.contains_key(&id)
     }
