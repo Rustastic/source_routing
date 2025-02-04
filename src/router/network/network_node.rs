@@ -1,4 +1,3 @@
-
 use wg_2024::packet::NodeType;
 
 use wg_2024::network::NodeId;

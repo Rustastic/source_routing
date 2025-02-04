@@ -2,11 +2,11 @@ use crate::error::{
     Result,
     RouterError::{IdAlreadyPresent, IdNotFound, ParentsMalformed, RemoveSelfErr, RouteNotFound},
 };
+use network_node::NetworkNode;
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet, VecDeque},
 };
-use network_node::NetworkNode;
 use wg_2024::{network::NodeId, packet::NodeType};
 
 pub type Path = Vec<NodeId>;
@@ -120,8 +120,7 @@ impl Network {
         if self.network.contains_key(&id) {
             return Err(Box::new(IdAlreadyPresent { id, node_type }));
         }
-        self.network
-            .insert(id, NetworkNode::new(node_type));
+        self.network.insert(id, NetworkNode::new(node_type));
         Ok(())
     }
     /// Add `(id1, id2)` and `(id2, id1)` because link are undirected

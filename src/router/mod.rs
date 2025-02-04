@@ -25,8 +25,7 @@ impl Router {
     #[must_use]
     pub fn new(
         id: NodeId,
-        node_type: NodeType
-        /* neighbours: &HashMap<NodeId, Sender<Packet>> */,
+        node_type: NodeType, /* neighbours: &HashMap<NodeId, Sender<Packet>> */
     ) -> Self {
         let requester = FloodRequestFactory::new(/* neighbours.clone() ,*/ id);
         let network = Network::new(id, node_type);
@@ -37,7 +36,7 @@ impl Router {
             requester,
         }
     }
-    /* 
+    /*
     #[must_use]
     pub fn new_with_hashmaps(id: NodeId, packet_send: HashMap<NodeId, Sender<Packet>>) -> Self {
         let mut neighbour = vec![];
@@ -52,7 +51,7 @@ impl Router {
             network,
             requester,
         }
-    } 
+    }
     */
 }
 
@@ -85,10 +84,8 @@ impl Router {
     /// - `Err(RemoveSelfErr)` if the id is the root
     /// - `Err(IdNotFound)`
     pub fn drone_crashed(&mut self, id: NodeId) -> Result<()> {
-        self.network
-            .remove_node(id)
-            .map(|_| ())
-            // .and(self.requester.remove_neighbour(id))
+        self.network.remove_node(id).map(|_| ())
+        // .and(self.requester.remove_neighbour(id))
     }
     /// # Errors
     /// - `Err(IdAlreadyPresent)` with `node_type` set to `NodeType::Drone`
@@ -99,7 +96,7 @@ impl Router {
         //     .add_neighbour(id, sender)
         //     .and(self.network.add_neighbour(id))
     }
-    /* 
+    /*
     /// # Errors
     /// - `Err(IdNotFound)` if the id is not a neighbour
     pub fn remove_neighbour(&mut self, id: NodeId) -> Result<()> {
