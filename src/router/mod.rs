@@ -2,7 +2,7 @@ use std::{collections::HashMap, rc::Rc, vec};
 
 use crate::error::Result;
 use crossbeam_channel::Sender;
-use flood_requester::FloodRequester;
+use flood_requester::FloodRequestFactory;
 use network::Network;
 use wg_2024::{
     network::{NodeId, SourceRoutingHeader},
@@ -17,18 +17,18 @@ pub struct Router {
     id: NodeId,
     node_type: NodeType,
     network: Network,
-    requester: FloodRequester,
+    requester: FloodRequestFactory,
 }
 
 impl Router {
     //constructors
     #[must_use]
-    pub fn new_with_neighbours(
+    pub fn new(
         id: NodeId,
-        node_type: NodeType,
-        neighbours: &HashMap<NodeId, Sender<Packet>>,
+        node_type: NodeType
+        /* neighbours: &HashMap<NodeId, Sender<Packet>> */,
     ) -> Self {
-        let requester = FloodRequester::new(neighbours.clone(), id);
+        let requester = FloodRequestFactory::new(/* neighbours.clone() ,*/ id);
         let network = Network::new(id, node_type);
         Self {
             id,
@@ -37,7 +37,8 @@ impl Router {
             requester,
         }
     }
-    /* #[must_use]
+    /* 
+    #[must_use]
     pub fn new_with_hashmaps(id: NodeId, packet_send: HashMap<NodeId, Sender<Packet>>) -> Self {
         let mut neighbour = vec![];
         for (id, send) in packet_send {
@@ -51,7 +52,8 @@ impl Router {
             network,
             requester,
         }
-    } */
+    } 
+    */
 }
 
 impl Router {
@@ -66,14 +68,19 @@ impl Router {
         let header = SourceRoutingHeader::initialize(path);
         Ok(header.without_loops())
     }
+    pub fn get_flood_request(&self) -> Packet {
+        self.requester.get_flood_request()
+    }
+    /*
     pub fn flood_neighbours(&self) {
-        self.requester.flood_neighbours();
+    self.requester.flood_neighbours();
     }
     /// # Errors
     /// - `Err(IdNotFound)` if the `id` is not in the neighbour
     pub fn flood_with_id(&self, id: NodeId) -> Result<()> {
         self.requester.flood_with_id(id)
     }
+    */
     /// # Errors
     /// - `Err(RemoveSelfErr)` if the id is the root
     /// - `Err(IdNotFound)`
@@ -81,17 +88,19 @@ impl Router {
         self.network
             .remove_node(id)
             .map(|_| ())
-            .and(self.requester.remove_neighbour(id))
+            // .and(self.requester.remove_neighbour(id))
     }
     /// # Errors
     /// - `Err(IdAlreadyPresent)` with `node_type` set to `NodeType::Drone`
     ///   (assuming a client does not have neighbours not Drone)
-    pub fn add_neighbour(&mut self, id: NodeId, sender: Sender<Packet>) -> Result<()> {
-        self.requester
-            .add_neighbour(id, sender)
-            .and(self.network.add_neighbour(id))
+    pub fn add_neighbour(&mut self, id: NodeId) -> Result<()> {
+        self.network.add_neighbour(id)
+        // self.requester
+        //     .add_neighbour(id, sender)
+        //     .and(self.network.add_neighbour(id))
     }
-    /* /// # Errors
+    /* 
+    /// # Errors
     /// - `Err(IdNotFound)` if the id is not a neighbour
     pub fn remove_neighbour(&mut self, id: NodeId) -> Result<()> {
         self.requester.remove_neighbour(id)
