@@ -225,4 +225,3 @@ fn parents_to_path(parents: &HashMap<NodeId, Option<NodeId>>, destination: NodeI
     path.reverse();
     Ok(path)
 }
-
