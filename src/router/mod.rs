@@ -1,4 +1,8 @@
-use std::{collections::HashMap, rc::Rc, vec};
+use std::{
+    collections::{HashMap, HashSet},
+    rc::Rc,
+    vec,
+};
 
 use crate::error::Result;
 use crossbeam_channel::Sender;
@@ -115,4 +119,10 @@ impl Router {
     pub fn remove_neighbour(&mut self, id: NodeId) -> Result<()> {
         self.requester.remove_neighbour(id)
     }  */
+
+    /// Returns the list of server in the network, used to determine which server is Chat
+    /// and which is Media/Text  
+    pub fn get_server_list(&self) -> HashSet<NodeId> {
+        self.network.get_server_list()
+    }
 }

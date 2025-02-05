@@ -196,6 +196,10 @@ impl Network {
 
         visited.remove(&current);
     }
+
+    pub fn get_server_list(&self) -> HashSet<NodeId> {
+        self.server_list.clone()
+    }
 }
 
 impl Network {
