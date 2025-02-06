@@ -48,6 +48,13 @@ impl Network {
             let _ = self.add_link(id1, id2);
         }
     }
+    /// # Errors
+    /// - `Err(RouteNotFound)` if the destionation is unreachable
+    pub fn get_routes(&self, destination: NodeId) -> Result<Path> {
+        let parents = self.bfs().or(Err(RouteNotFound { destination }))?;
+        let path = parents_to_path(&parents, destination)?;
+        Ok(path)
+    }
     /// Remove every neighbour that is no longer in the network
     pub fn try_fix_network(&mut self) {
         for node in self.network.values() {
@@ -146,25 +153,6 @@ impl Network {
     /// - `Err(IdNotFound)`
     pub fn get_mut(&mut self, id: NodeId) -> Result<&mut NetworkNode> {
         self.network.get_mut(&id).ok_or(Box::new(IdNotFound(id)))
-    }
-    pub fn get_server_ids(&self) -> Vec<NodeId> {
-        self.get_from_node_type(NodeType::Server)
-    }
-    /// # Errors
-    /// - `Err(RouteNotFound)` if the destionation is unreachable
-    pub fn get_routes(&self, destination: NodeId) -> Result<Path> {
-        let parents = self.bfs().or(Err(RouteNotFound { destination }))?;
-        let path = parents_to_path(&parents, destination)?;
-        Ok(path)
-    }
-    fn get_from_node_type(&self, node_type: NodeType) -> Vec<NodeId> {
-        self.network.iter().filter_map(|(&node_id, node)| {
-            if node.node_type == node_type {
-                return Some(node_id)
-            }
-            None
-        })
-        .collect()
     }
 }
 
