@@ -74,9 +74,9 @@ impl Network {
             return Err(Box::new(RemoveSelfErr));
         }
         if self.get(id)?.node_type == NodeType::Server {
-            self.server_list.remove(&id) ;
+            self.server_list.remove(&id);
         }
-        
+
         self.network.remove(&id).ok_or(IdNotFound(id))?;
         for v in self.network.values_mut() {
             v.remove_neighbour(id);
@@ -124,7 +124,7 @@ impl Network {
             return Err(Box::new(IdAlreadyPresent { id, node_type }));
         }
         if node_type == NodeType::Server {
-            self.server_list.insert(id) ;
+            self.server_list.insert(id);
         }
         self.network.insert(id, NetworkNode::new(node_type));
         Ok(())
@@ -174,7 +174,6 @@ impl Network {
 
         visited.remove(&current);
     }
-
 }
 
 impl Network {
@@ -189,7 +188,7 @@ impl Network {
     pub fn get_mut(&mut self, id: NodeId) -> Result<&mut NetworkNode> {
         self.network.get_mut(&id).ok_or(Box::new(IdNotFound(id)))
     }
-        /// # Errors
+    /// # Errors
     /// - `Err(RouteNotFound)` if the destionation is unreachable
     pub fn get_routes(&self, destination: NodeId) -> Result<Path> {
         let parents = self.bfs().or(Err(RouteNotFound { destination }))?;
