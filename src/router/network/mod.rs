@@ -15,6 +15,7 @@ mod network_node;
 #[cfg(test)]
 mod test;
 
+#[allow(clippy::struct_field_names)]
 #[derive(Debug)]
 pub struct Network {
     root: NodeId,
@@ -53,13 +54,6 @@ impl Network {
             let _ = self.add_link(id1, id2);
         }
     }
-    /// # Errors
-    /// - `Err(RouteNotFound)` if the destionation is unreachable
-    pub fn get_routes(&self, destination: NodeId) -> Result<Path> {
-        let parents = self.bfs().or(Err(RouteNotFound { destination }))?;
-        let path = parents_to_path(&parents, destination)?;
-        Ok(path)
-    }
     /// Remove every neighbour that is no longer in the network
     pub fn try_fix_network(&mut self) {
         for node in self.network.values() {
@@ -79,6 +73,10 @@ impl Network {
         if self.root == id {
             return Err(Box::new(RemoveSelfErr));
         }
+        if self.get(id)?.node_type == NodeType::Server {
+            self.server_list.remove(&id) ;
+        }
+        
         self.network.remove(&id).ok_or(IdNotFound(id))?;
         for v in self.network.values_mut() {
             v.remove_neighbour(id);
@@ -148,26 +146,6 @@ impl Network {
             .add_neighbour(id1);
         Ok(())
     }
-    /// Useful when a drone in a path has a high pdr,
-    /// the client/server can call this method and decide which path
-    /// the dropped packet will be sent through.
-
-    pub fn multiple_paths(&self, destination_id: NodeId) -> Vec<Path> {
-        let mut paths = Vec::new();
-        let mut visited = HashSet::new();
-        let mut current_path = vec![self.root];
-
-        self.dfs(
-            self.root,
-            destination_id,
-            &mut visited,
-            &mut current_path,
-            &mut paths,
-        );
-
-        paths
-    }
-
     /// Compute all the paths between the root and a destination
     fn dfs(
         &self,
@@ -197,9 +175,6 @@ impl Network {
         visited.remove(&current);
     }
 
-    pub fn get_server_list(&self) -> HashSet<NodeId> {
-        self.server_list.clone()
-    }
 }
 
 impl Network {
@@ -213,6 +188,32 @@ impl Network {
     /// - `Err(IdNotFound)`
     pub fn get_mut(&mut self, id: NodeId) -> Result<&mut NetworkNode> {
         self.network.get_mut(&id).ok_or(Box::new(IdNotFound(id)))
+    }
+        /// # Errors
+    /// - `Err(RouteNotFound)` if the destionation is unreachable
+    pub fn get_routes(&self, destination: NodeId) -> Result<Path> {
+        let parents = self.bfs().or(Err(RouteNotFound { destination }))?;
+        let path = parents_to_path(&parents, destination)?;
+        Ok(path)
+    }
+    pub fn get_server_list(&self) -> HashSet<NodeId> {
+        self.server_list.clone()
+    }
+    /// Useful when a drone in a path has a high pdr,
+    /// the client/server can call this method and decide which path
+    /// the dropped packet will be sent through.
+    pub fn multiple_paths(&self, destination_id: NodeId) -> Vec<Path> {
+        let mut paths = Vec::new();
+        let mut visited = HashSet::new();
+        let mut current_path = vec![self.root];
+        self.dfs(
+            self.root,
+            destination_id,
+            &mut visited,
+            &mut current_path,
+            &mut paths,
+        );
+        paths
     }
 }
 
