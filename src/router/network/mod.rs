@@ -19,6 +19,7 @@ mod test;
 pub struct Network {
     root: NodeId,
     network: HashMap<NodeId, NetworkNode>,
+    server_list: HashSet<NodeId>,
 }
 
 impl Network {
@@ -26,7 +27,11 @@ impl Network {
     pub fn new(root: NodeId, root_type: NodeType) -> Self {
         let mut network = HashMap::new();
         network.insert(root, NetworkNode::new(root_type));
-        Self { root, network }
+        Self {
+            root,
+            network,
+            server_list: HashSet::new(),
+        }
     }
 }
 
@@ -37,6 +42,9 @@ impl Network {
     }
     pub fn update_from_path_trace(&mut self, path_trace: &[(NodeId, NodeType)]) {
         for i in 0..path_trace.len() - 1 {
+            if let NodeType::Server = path_trace[i].1 {
+                self.server_list.insert(path_trace[i].0);
+            }
             let (id1, type1) = path_trace[i];
             let (id2, type2) = path_trace[i + 1];
             if !self.contains_id(id1) {
@@ -139,6 +147,58 @@ impl Network {
             .ok_or(IdNotFound(id2))?
             .add_neighbour(id1);
         Ok(())
+    }
+    /// Useful when a drone in a path has a high pdr,
+    /// the client/server can call this method and decide which path
+    /// the dropped packet will be sent through.
+
+    pub fn multiple_paths(&self, destination_id: NodeId) -> Vec<Path> {
+        let mut paths = Vec::new();
+        let mut visited = HashSet::new();
+        let mut current_path = vec![self.root];
+
+        self.dfs(
+            self.root,
+            destination_id,
+            &mut visited,
+            &mut current_path,
+            &mut paths,
+        );
+
+        paths
+    }
+
+    /// Compute all the paths between the root and a destination
+    fn dfs(
+        &self,
+        current: u8,
+        destination: u8,
+        visited: &mut HashSet<u8>,
+        current_path: &mut Vec<u8>,
+        paths: &mut Vec<Vec<u8>>,
+    ) {
+        if current == destination {
+            paths.push(current_path.clone());
+            return;
+        }
+
+        visited.insert(current);
+
+        if let Some(node) = self.network.get(&current) {
+            for &neighbour in node.neighbours.borrow().iter() {
+                if !visited.contains(&neighbour) {
+                    current_path.push(neighbour);
+                    self.dfs(neighbour, destination, visited, current_path, paths);
+                    current_path.pop();
+                }
+            }
+        }
+
+        visited.remove(&current);
+    }
+
+    pub fn get_server_list(&self) -> HashSet<NodeId> {
+        self.server_list.clone()
     }
 }
 

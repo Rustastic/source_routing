@@ -1,4 +1,8 @@
-use std::{collections::HashMap, rc::Rc, vec};
+use std::{
+    collections::{HashMap, HashSet},
+    rc::Rc,
+    vec,
+};
 
 use crate::error::Result;
 use crossbeam_channel::Sender;
@@ -67,6 +71,19 @@ impl Router {
         let header = SourceRoutingHeader::initialize(path);
         Ok(header.without_loops())
     }
+
+    pub fn get_multiple_source_routing_headers(
+        &self,
+        destination: NodeId,
+    ) -> Vec<SourceRoutingHeader> {
+        let paths = self.network.multiple_paths(destination);
+        let mut source_routing_headers = Vec::new();
+        for path in paths {
+            source_routing_headers.push(SourceRoutingHeader::initialize(path));
+        }
+        source_routing_headers
+    }
+
     pub fn get_flood_request(&self) -> Packet {
         self.requester.get_flood_request()
     }
@@ -102,4 +119,10 @@ impl Router {
     pub fn remove_neighbour(&mut self, id: NodeId) -> Result<()> {
         self.requester.remove_neighbour(id)
     }  */
+
+    /// Returns the list of server in the network, used to determine which server is Chat
+    /// and which is Media/Text  
+    pub fn get_server_list(&self) -> HashSet<NodeId> {
+        self.network.get_server_list()
+    }
 }
