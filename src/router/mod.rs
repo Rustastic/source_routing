@@ -60,16 +60,6 @@ impl Router {
     pub fn handle_flood_response(&mut self, resp: &FloodResponse) {
         self.network.update_from_path_trace(&resp.path_trace);
     }
-    /// # Errors
-    /// - `Err(RouteNotFound)` if the destionation is unreachable
-    pub fn get_source_routing_header(&self, destination: NodeId) -> Result<SourceRoutingHeader> {
-        let path = self.network.get_routes(destination)?;
-        let header = SourceRoutingHeader::initialize(path);
-        Ok(header.without_loops())
-    }
-    pub fn get_flood_request(&self) -> Packet {
-        self.requester.get_flood_request()
-    }
     /*
     pub fn flood_neighbours(&self) {
     self.requester.flood_neighbours();
@@ -102,4 +92,21 @@ impl Router {
     pub fn remove_neighbour(&mut self, id: NodeId) -> Result<()> {
         self.requester.remove_neighbour(id)
     }  */
+}
+
+impl Router {
+    // getter/setter
+    /// # Errors
+    /// - `Err(RouteNotFound)` if the destionation is unreachable
+    pub fn get_source_routing_header(&self, destination: NodeId) -> Result<SourceRoutingHeader> {
+        let path = self.network.get_routes(destination)?;
+        let header = SourceRoutingHeader::initialize(path);
+        Ok(header.without_loops())
+    }
+    pub fn get_flood_request(&self) -> Packet {
+        self.requester.get_flood_request()
+    }
+    pub fn get_server_ids(&self) -> Vec<NodeId> {
+        self.network.get_server_ids()
+    }
 }

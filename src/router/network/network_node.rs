@@ -4,7 +4,6 @@ use wg_2024::network::NodeId;
 
 use std::cell::RefCell;
 
-#[allow(clippy::module_name_repetitions)]
 #[derive(Debug)]
 pub struct NetworkNode {
     pub(crate) neighbours: RefCell<Vec<NodeId>>,
