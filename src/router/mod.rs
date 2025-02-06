@@ -125,4 +125,7 @@ impl Router {
     pub fn get_server_list(&self) -> HashSet<NodeId> {
         self.network.get_server_list()
     }
+    pub fn clear_routing_table(&mut self) {
+        self.network = Network::new(self.id, self.node_type);
+    }
 }
