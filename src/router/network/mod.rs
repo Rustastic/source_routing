@@ -42,9 +42,6 @@ impl Network {
     }
     pub fn update_from_path_trace(&mut self, path_trace: &[(NodeId, NodeType)]) {
         for i in 0..path_trace.len() - 1 {
-            if let NodeType::Server = path_trace[i].1 {
-                self.server_list.insert(path_trace[i].0);
-            }
             let (id1, type1) = path_trace[i];
             let (id2, type2) = path_trace[i + 1];
             if !self.contains_id(id1) {
@@ -127,6 +124,9 @@ impl Network {
     fn add_empty_node(&mut self, id: NodeId, node_type: NodeType) -> Result<()> {
         if self.network.contains_key(&id) {
             return Err(Box::new(IdAlreadyPresent { id, node_type }));
+        }
+        if node_type == NodeType::Server {
+            self.server_list.insert(id) ;
         }
         self.network.insert(id, NetworkNode::new(node_type));
         Ok(())
