@@ -147,6 +147,7 @@ impl Network {
         Ok(())
     }
     /// Compute all the paths between the root and a destination
+    ///
     fn dfs(
         &self,
         current: u8,
@@ -162,11 +163,25 @@ impl Network {
 
         visited.insert(current);
 
-        if let Some(node) = self.network.get(&current) {
-            for &neighbour in node.neighbours.borrow().iter() {
-                if !visited.contains(&neighbour) {
-                    current_path.push(neighbour);
-                    self.dfs(neighbour, destination, visited, current_path, paths);
+        if let Some(current_node) = self.network.get(&current) {
+            for &neighbor in current_node.neighbours.borrow().iter() {
+                if visited.contains(&neighbor) {
+                    continue;
+                }
+
+                let neighbor_node = match self.network.get(&neighbor) {
+                    Some(node) => node,
+                    None => continue,
+                };
+
+                let should_visit = match neighbor_node.node_type {
+                    NodeType::Drone => true,
+                    _ => neighbor == destination,
+                };
+
+                if should_visit {
+                    current_path.push(neighbor);
+                    self.dfs(neighbor, destination, visited, current_path, paths);
                     current_path.pop();
                 }
             }
