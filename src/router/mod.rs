@@ -85,7 +85,7 @@ impl Router {
     }
 
     pub fn get_flood_request(&self) -> Packet {
-        self.requester.get_flood_request()
+        self.requester.get_flood_request(self.node_type)
     }
     /*
     pub fn flood_neighbours(&self) {
