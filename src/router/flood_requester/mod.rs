@@ -6,7 +6,7 @@ use crossbeam_channel::Sender;
 use std::{cell::RefCell, collections::HashMap};
 use wg_2024::{
     network::{NodeId, SourceRoutingHeader},
-    packet::{FloodRequest, NodeType, Packet, PacketType},
+    packet::{FloodRequest, Packet, PacketType},
 };
 
 // use neighbour::NeighBour;
@@ -48,8 +48,8 @@ impl FloodRequestFactory {
     //         })
     //         .collect()
     // }
-    pub fn get_flood_request(&self, nodetype: NodeType) -> Packet {
-        self.flood_request_to_packet(self.create_request(nodetype))
+    pub fn get_flood_request(&self) -> Packet {
+        self.flood_request_to_packet(self.create_request())
     }
     /// send a `flood request` only to `id`
     /// # Errors
@@ -90,7 +90,7 @@ impl FloodRequestFactory {
     // fn contains_id(&self, id: NodeId) -> bool {
     //     self.flood_send.contains_key(&id)
     // }
-    fn create_request(&self, nodetype: NodeType) -> FloodRequest {
+    fn create_request(&self) -> FloodRequest {
         let flood_id = self
             .flood_ids
             .borrow()
@@ -98,9 +98,7 @@ impl FloodRequestFactory {
             .map_or_else(|| 0, |id| id + 1);
 
         self.flood_ids.borrow_mut().push(flood_id);
-        let mut flood_request = FloodRequest::new(flood_id, self.id);
-        flood_request.path_trace.push((self.id, nodetype));
-        flood_request
+        FloodRequest::new(flood_id, self.id)
     }
     fn flood_request_to_packet(&self, req: FloodRequest) -> Packet {
         Packet {
