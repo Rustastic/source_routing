@@ -182,10 +182,7 @@ impl Network {
                     continue;
                 }
 
-                let neighbor_node = match self.network.get(&neighbor) {
-                    Some(node) => node,
-                    None => continue,
-                };
+                let Some(neighbor_node) = self.network.get(&neighbor) else { continue };
 
                 let should_visit = match neighbor_node.node_type {
                     NodeType::Drone => true,
