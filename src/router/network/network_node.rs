@@ -30,15 +30,6 @@ impl NetworkNode {
             self.neighbours.borrow_mut().push(id);
         }
     }
-    /// Add some ids to the neightbours calling `std::vec::reserve()` before
-    /// # Note
-    /// Does not check if the ids are valid, so you have to ensure that the ids are already in the network
-    pub(crate) fn bulk_add_neighbours(&self, ids: Vec<NodeId>) {
-        self.neighbours.borrow_mut().reserve(ids.len());
-        for id in ids {
-            self.add_neighbour(id);
-        }
-    }
     /// # Note
     /// Does not preserve order in the vector
     pub(crate) fn remove_neighbour(&self, id: NodeId) {
@@ -46,4 +37,13 @@ impl NetworkNode {
             self.neighbours.borrow_mut().swap_remove(index);
         }
     }
+    /* /// Add some ids to the neightbours calling `std::vec::reserve()` before
+    /// # Note
+    /// Does not check if the ids are valid, so you have to ensure that the ids are already in the network
+    fn bulk_add_neighbours(&self, ids: Vec<NodeId>) {
+        self.neighbours.borrow_mut().reserve(ids.len());
+        for id in ids {
+            self.add_neighbour(id);
+        }
+    } */
 }
