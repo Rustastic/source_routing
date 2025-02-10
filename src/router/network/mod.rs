@@ -43,6 +43,12 @@ impl Network {
         self.network.contains_key(&key)
     }
     pub fn update_from_path_trace(&mut self, path_trace: &[(NodeId, NodeType)]) {
+        if let Some((first_id, first_type)) = path_trace.first() {
+            if !self.contains_id(*first_id) {
+                let _ = self.add_empty_node(*first_id, *first_type);
+            }
+            let _ = self.add_link(self.root, *first_id);
+        }
         for i in 0..path_trace.len() - 1 {
             let (id1, type1) = path_trace[i];
             if let NodeType::Server = type1 {
