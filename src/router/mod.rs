@@ -70,7 +70,7 @@ impl Router {
     pub fn get_source_routing_header(&self, destination: NodeId) -> Result<SourceRoutingHeader> {
         self.network.log_network();
         let path = self.network.get_routes(destination)?;
-        let header = SourceRoutingHeader::initialize(path);
+        let header = SourceRoutingHeader::with_first_hop(path);
         Ok(header.without_loops())
     }
     pub fn log_network(&self) {
