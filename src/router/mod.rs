@@ -1,6 +1,4 @@
-use std::
-    collections::HashSet
-;
+use std::collections::HashSet;
 
 use crate::error::Result;
 use flood_requester::FloodRequestFactory;
@@ -124,9 +122,7 @@ impl Router {
     /// Returns the list of server in the network, used to determine which server is Chat
     /// and which is Media/Text  
     pub fn get_server_list(&self) -> HashSet<NodeId> {
-        let server_list = self.network.get_server_list();
-        log::info!("{:?}", server_list);
-        server_list
+        self.network.get_server_list()
     }
     pub fn clear_routing_table(&mut self) {
         self.network = Network::new(self.id, self.node_type);
