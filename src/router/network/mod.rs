@@ -4,10 +4,7 @@ use crate::error::{
 };
 use log::info;
 use network_node::NetworkNode;
-use std::{
-    cell::RefCell,
-    collections::{HashMap, HashSet, VecDeque},
-};
+use std::collections::{HashMap, HashSet, VecDeque};
 use wg_2024::{network::NodeId, packet::NodeType};
 
 pub type Path = Vec<NodeId>;
@@ -65,16 +62,6 @@ impl Network {
                 let _ = self.add_empty_node(id2, type2);
             }
             let _ = self.add_link(id1, id2);
-        }
-    }
-    /// Remove every neighbour that is no longer in the network
-    pub fn try_fix_network(&mut self) {
-        for node in self.network.values() {
-            for &id in node.neighbours.borrow().iter() {
-                if !self.contains_id(id) {
-                    node.remove_neighbour(id);
-                }
-            }
         }
     }
     /// Remove the node specified from the network
@@ -209,11 +196,6 @@ impl Network {
     /// - `Err(IdNotFound)`
     pub fn get(&self, id: NodeId) -> Result<&NetworkNode> {
         self.network.get(&id).ok_or(Box::new(IdNotFound(id)))
-    }
-    /// # Errors:
-    /// - `Err(IdNotFound)`
-    pub fn get_mut(&mut self, id: NodeId) -> Result<&mut NetworkNode> {
-        self.network.get_mut(&id).ok_or(Box::new(IdNotFound(id)))
     }
     /// # Errors
     /// - `Err(RouteNotFound)` if the destionation is unreachable

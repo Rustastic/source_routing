@@ -1,9 +1,4 @@
-use crate::error::{
-    Result,
-    RouterError::{IdAlreadyPresent, IdNotFound, SendError},
-};
-use crossbeam_channel::Sender;
-use std::{cell::RefCell, collections::HashMap};
+use std::cell::RefCell;
 use wg_2024::{
     network::{NodeId, SourceRoutingHeader},
     packet::{FloodRequest, Packet, PacketType},
