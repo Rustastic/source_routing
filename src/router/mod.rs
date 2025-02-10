@@ -28,7 +28,7 @@ impl Router {
         id: NodeId,
         node_type: NodeType, /* neighbours: &HashMap<NodeId, Sender<Packet>> */
     ) -> Self {
-        let requester = FloodRequestFactory::new(/* neighbours.clone() ,*/ id);
+        let requester = FloodRequestFactory::new(/* neighbours.clone() ,*/ id, node_type);
         let network = Network::new(id, node_type);
         Self {
             id,
