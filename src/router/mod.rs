@@ -73,6 +73,9 @@ impl Router {
         let header = SourceRoutingHeader::initialize(path);
         Ok(header.without_loops())
     }
+    pub fn log_network(&self) {
+        self.network.log_network();
+    }
 
     pub fn get_multiple_source_routing_headers(
         &self,
