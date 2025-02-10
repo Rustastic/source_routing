@@ -45,7 +45,13 @@ impl Network {
     pub fn update_from_path_trace(&mut self, path_trace: &[(NodeId, NodeType)]) {
         for i in 0..path_trace.len() - 1 {
             let (id1, type1) = path_trace[i];
+            if let NodeType::Server = type1 {
+                self.server_list.insert(id1);
+            }
             let (id2, type2) = path_trace[i + 1];
+            if let NodeType::Server = type2 {
+                self.server_list.insert(id2);
+            }
             if !self.contains_id(id1) {
                 let _ = self.add_empty_node(id1, type1);
             }
