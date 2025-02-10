@@ -26,7 +26,9 @@ impl NetworkNode {
     /// # Note
     /// Does not check if the id is valid, so you have to ensure that the id is already in the network
     pub(crate) fn add_neighbour(&self, id: NodeId) {
-        self.neighbours.borrow_mut().push(id);
+        if !self.neighbours.borrow().contains(&id) {
+            self.neighbours.borrow_mut().push(id);
+        }
     }
     /// Add some ids to the neightbours calling `std::vec::reserve()` before
     /// # Note
