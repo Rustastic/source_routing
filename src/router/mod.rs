@@ -129,7 +129,7 @@ impl Router {
     /// and which is Media/Text  
     pub fn get_server_list(&self) -> HashSet<NodeId> {
         let server_list = self.network.get_server_list();
-        log::info!("{:?}",server_list);
+        log::info!("{:?}", server_list);
         server_list
     }
     pub fn clear_routing_table(&mut self) {

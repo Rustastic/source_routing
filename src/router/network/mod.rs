@@ -182,7 +182,9 @@ impl Network {
                     continue;
                 }
 
-                let Some(neighbor_node) = self.network.get(&neighbor) else { continue };
+                let Some(neighbor_node) = self.network.get(&neighbor) else {
+                    continue;
+                };
 
                 let should_visit = match neighbor_node.node_type {
                     NodeType::Drone => true,
@@ -246,11 +248,9 @@ impl Network {
             let iter = node.neighbours.borrow();
             for v in iter.iter() {
                 info_str.push_str(format!(" {v}").as_str());
-            } 
+            }
         }
-        info!(
-            "[RouterOf: {}] == {info_str}", self.root
-        ) ;
+        info!("[RouterOf: {}] == {info_str}", self.root);
     }
 }
 
