@@ -7,6 +7,7 @@ use std::{
 use crate::error::Result;
 use crossbeam_channel::Sender;
 use flood_requester::FloodRequestFactory;
+use log::info;
 use network::Network;
 use wg_2024::{
     network::{NodeId, SourceRoutingHeader},
@@ -67,6 +68,7 @@ impl Router {
     /// # Errors
     /// - `Err(RouteNotFound)` if the destionation is unreachable
     pub fn get_source_routing_header(&self, destination: NodeId) -> Result<SourceRoutingHeader> {
+        self.network.log_network();
         let path = self.network.get_routes(destination)?;
         let header = SourceRoutingHeader::initialize(path);
         Ok(header.without_loops())

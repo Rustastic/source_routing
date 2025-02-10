@@ -2,6 +2,7 @@ use crate::error::{
     Result,
     RouterError::{IdAlreadyPresent, IdNotFound, ParentsMalformed, RemoveSelfErr, RouteNotFound},
 };
+use log::info;
 use network_node::NetworkNode;
 use std::{
     cell::RefCell,
@@ -228,6 +229,19 @@ impl Network {
             &mut paths,
         );
         paths
+    }
+    pub fn log_network(&self) {
+        let mut info_str = "Path trace \n\n".to_string();
+        for (node_id, node) in &self.network {
+            info_str.push_str(format!("\n\t {node_id} => ").as_str());
+            let iter = node.neighbours.borrow();
+            for v in iter.iter() {
+                info_str.push_str(format!(" {v}").as_str());
+            } 
+        }
+        info!(
+            "[RouterOf: {}] == {info_str}", self.root
+        ) ;
     }
 }
 
