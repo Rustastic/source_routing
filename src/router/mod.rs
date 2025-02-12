@@ -62,13 +62,13 @@ impl Router {
     /// # Errors
     /// - `Err(RouteNotFound)` if the destionation is unreachable
     pub fn get_source_routing_header(&self, destination: NodeId) -> Result<SourceRoutingHeader> {
-        self.network.log_network();
+        self.log_network();
         let path = self.network.get_routes(destination)?;
         let header = SourceRoutingHeader::with_first_hop(path);
         Ok(header.without_loops())
     }
     pub fn log_network(&self) {
-        self.network.log_network();
+        // self.network.log_network();
     }
 
     pub fn get_multiple_source_routing_headers(
