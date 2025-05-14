@@ -20,3 +20,15 @@ fn test_bfs() {
     let path = network.get_routes(4).unwrap();
     assert_eq!(path, vec![1, 2, 4]);
 }
+
+#[test]
+fn test_remove_neighbour(){
+    let node = NetworkNode::new(NodeType::Drone);
+    node.add_neighbour(1);
+    node.add_neighbour(2);
+    node.add_neighbour(2);
+    node.add_neighbour(3);
+
+    node.remove_neighbour(12);
+    node.add_neighbour(2);
+}

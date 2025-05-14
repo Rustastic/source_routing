@@ -33,8 +33,11 @@ impl NetworkNode {
     /// # Note
     /// Does not preserve order in the vector
     pub(crate) fn remove_neighbour(&self, id: NodeId) {
-        if let Some(index) = self.neighbours.borrow().iter().position(|&i| i == id) {
-            self.neighbours.borrow_mut().swap_remove(index);
+        let index = self.neighbours.borrow().iter().position(|&i| i == id);
+        if let Some(index) = index {
+            if let Ok(mut a) = self.neighbours.try_borrow_mut() {
+                a.swap_remove(index);
+            }
         }
     }
     /* /// Add some ids to the neightbours calling `std::vec::reserve()` before
