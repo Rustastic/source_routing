@@ -234,6 +234,7 @@ impl Network {
             }
         }
         info!("[RouterOf: {}] == {info_str}", self.root);
+        println!("[RouterOf: {}] == {info_str}", self.root);
     }
 }
 
