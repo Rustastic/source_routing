@@ -81,6 +81,7 @@ impl Network {
         for v in self.network.values_mut() {
             v.remove_neighbour(id);
         }
+        self.log_network();
         Ok(id)
     }
     /// # Errors
