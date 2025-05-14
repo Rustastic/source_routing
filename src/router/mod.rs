@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use crate::error::Result;
 use flood_requester::FloodRequestFactory;
+use log::info;
 use network::Network;
 use wg_2024::{
     network::{NodeId, SourceRoutingHeader},
@@ -62,10 +63,11 @@ impl Router {
     /// # Errors
     /// - `Err(RouteNotFound)` if the destionation is unreachable
     pub fn get_source_routing_header(&self, destination: NodeId) -> Result<SourceRoutingHeader> {
-        self.log_network();
         let path = self.network.get_routes(destination)?;
-        let header = SourceRoutingHeader::with_first_hop(path);
-        Ok(header.without_loops())
+        let header = SourceRoutingHeader::with_first_hop(path).without_loops();
+        println!("[RouterOf: {}] header: {header}", self.id);
+        info!("[RouterOf: {}] header: {header}", self.id);
+        Ok(header)
     }
     pub fn log_network(&self) {
         // self.network.log_network();
