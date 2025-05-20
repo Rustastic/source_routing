@@ -102,10 +102,6 @@ impl Network {
     /// # Errors
     /// - `IdNotFound`
     pub fn increment_weight(&mut self, id: NodeId) -> Result<()> {
-        // self.weight
-        //     .entry((id1, id2))
-        //     .and_modify(|w| *w += 1)
-        //     .or_insert(0);
         for neighbour in self.get(id)?.neighbours.borrow().iter() {
             self.weight
                 .borrow_mut()

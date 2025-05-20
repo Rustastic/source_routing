@@ -15,7 +15,7 @@ fn test_bfs() {
     let _ = network.add_link(1, 3);
     let _ = network.add_link(3, 5);
     let _ = network.add_link(3, 5);
-    
+
     let _ = network.increment_weight(3);
     let _ = network.increment_weight(3);
     let _ = network.increment_weight(3);
@@ -23,7 +23,7 @@ fn test_bfs() {
     let _ = network.increment_weight(3);
     let _ = network.increment_weight(3);
     let _ = network.increment_weight(3);
-    
+
     println!("{network:?}");
     let path = network.get_routes(5).unwrap();
 
