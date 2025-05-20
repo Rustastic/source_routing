@@ -13,17 +13,20 @@ pub struct FloodRequestFactory {
     // flood_send: HashMap<NodeId, Sender<Packet>>,
     flood_ids: RefCell<Vec<u64>>,
     id: NodeId,
-    node_type: NodeType
+    node_type: NodeType,
 }
 
 impl FloodRequestFactory {
     //constructor
-    pub fn new(/* neighbour_channel: HashMap<NodeId, Sender<Packet>>, */ id: NodeId, node_type: NodeType) -> Self {
+    pub fn new(
+        /* neighbour_channel: HashMap<NodeId, Sender<Packet>>, */ id: NodeId,
+        node_type: NodeType,
+    ) -> Self {
         Self {
             // flood_send: neighbour_channel,
             flood_ids: RefCell::new(Vec::new()),
             id,
-            node_type
+            node_type,
         }
     }
 }
@@ -95,7 +98,7 @@ impl FloodRequestFactory {
             .map_or_else(|| 0, |id| id + 1);
 
         self.flood_ids.borrow_mut().push(flood_id);
-        let mut a = FloodRequest::new(flood_id, self.id) ;
+        let mut a = FloodRequest::new(flood_id, self.id);
         a.path_trace.push((self.id, self.node_type));
         a
     }

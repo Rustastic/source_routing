@@ -4,7 +4,11 @@ use crate::error::{
 };
 use log::info;
 use network_node::NetworkNode;
-use std::collections::{HashMap, HashSet, VecDeque};
+use priority_queue::PriorityQueue;
+use std::{
+    cmp::Reverse,
+    collections::{HashMap, HashSet, VecDeque},
+};
 use wg_2024::{network::NodeId, packet::NodeType};
 
 pub type Path = Vec<NodeId>;
@@ -18,6 +22,7 @@ mod test;
 pub struct Network {
     root: NodeId,
     network: HashMap<NodeId, NetworkNode>,
+    weight: HashMap<(NodeId, NodeId), u64>,
     server_list: HashSet<NodeId>,
 }
 
@@ -29,6 +34,7 @@ impl Network {
         Self {
             root,
             network,
+            weight: HashMap::new(),
             server_list: HashSet::new(),
         }
     }
@@ -91,10 +97,17 @@ impl Network {
         let _ = self.add_link(id, self.root);
         Ok(())
     }
+    pub fn increment_weight(&mut self, id1: NodeId, id2: NodeId) {
+        self.weight
+            .entry((id1, id2))
+            .and_modify(|w| *w += 1)
+            .or_insert(0);
+    }
     /// Compute vector of parent of the network starting from the root
     /// # Errors
     /// - `Ok(HashMap<u,v>)` : `v` is the father of `u`
     /// - `Err(IdNotFound)` : if the network refer to a node no longer in the network
+    #[allow(dead_code)]
     fn bfs(&self) -> Result<HashMap<NodeId, Option<NodeId>>> {
         let mut queue = VecDeque::new();
         queue.push_back(self.root);
@@ -116,6 +129,48 @@ impl Network {
             }
         }
         Ok(parents)
+    }
+    fn dijkstra(&self) -> Result<HashMap<NodeId, Option<NodeId>>> {
+        // let mut queue = BinaryHeap::new();
+        // queue.push(Reverse(PriorityItem::new(0, self.root)));
+        let mut queue = PriorityQueue::new();
+        queue.push(self.root, Reverse(0u64));
+
+        let mut inside_queue = HashSet::new();
+        inside_queue.insert(self.root);
+
+        let mut distance = HashMap::new();
+        distance.insert(self.root, 0u64);
+
+        let mut parents = HashMap::new();
+        parents.insert(self.root, None);
+
+        while !queue.is_empty() {
+            let (u, _) = queue.pop().unwrap_or_else(|| unreachable!());
+            inside_queue.remove(&u);
+            for &v in self.get(u)?.neighbours.borrow().iter() {
+                let new_distance =
+                    distance.get(&u).unwrap_or(&u64::MAX) + self.get_weight(u, v);
+                if new_distance < *distance.get(&v).unwrap_or(&u64::MAX) {
+                    if inside_queue.contains(&v) {
+                        queue.change_priority(&v, std::cmp::Reverse(new_distance));
+                    } else {
+                        queue.push(v, std::cmp::Reverse(new_distance));
+                        inside_queue.insert(v);
+                    }
+                    parents.insert(v, Some(u));
+                    distance.insert(v, new_distance);
+                }
+            }
+        }
+        Ok(parents)
+    }
+    fn get_weight(&self, id1: NodeId, id2: NodeId) -> u64 {
+        self.weight
+            .get(&(id1, id2))
+            .or(self.weight.get(&(id2, id1)))
+            .copied()
+            .unwrap_or(0)
     }
     /// Add a node without neighbours to the network
     /// # Errors
@@ -201,7 +256,9 @@ impl Network {
     /// # Errors
     /// - `Err(RouteNotFound)` if the destionation is unreachable
     pub fn get_routes(&self, destination: NodeId) -> Result<Path> {
-        let parents = self.bfs().or(Err(RouteNotFound { destination }))?;
+        // let parents = self.bfs().or(Err(RouteNotFound { destination }))?;
+        // let path = parents_to_path(&parents, destination)?;
+        let parents = self.dijkstra().or(Err(RouteNotFound { destination }))?;
         let path = parents_to_path(&parents, destination)?;
         Ok(path)
     }

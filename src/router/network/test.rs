@@ -22,7 +22,7 @@ fn test_bfs() {
 }
 
 #[test]
-fn test_remove_neighbour(){
+fn test_remove_neighbour() {
     let node = NetworkNode::new(NodeType::Drone);
     node.add_neighbour(1);
     node.add_neighbour(2);
