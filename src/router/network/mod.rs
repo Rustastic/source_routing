@@ -102,6 +102,10 @@ impl Network {
             .entry((id1, id2))
             .and_modify(|w| *w += 1)
             .or_insert(0);
+        self.weight
+            .entry((id1, id2))
+            .and_modify(|w| *w += 1)
+            .or_insert(0);
     }
     /// Compute vector of parent of the network starting from the root
     /// # Errors
@@ -149,8 +153,7 @@ impl Network {
             let (u, _) = queue.pop().unwrap_or_else(|| unreachable!());
             inside_queue.remove(&u);
             for &v in self.get(u)?.neighbours.borrow().iter() {
-                let new_distance =
-                    distance.get(&u).unwrap_or(&u64::MAX) + self.get_weight(u, v);
+                let new_distance = distance.get(&u).unwrap_or(&u64::MAX) + self.get_weight(u, v);
                 if new_distance < *distance.get(&v).unwrap_or(&u64::MAX) {
                     if inside_queue.contains(&v) {
                         queue.change_priority(&v, std::cmp::Reverse(new_distance));
