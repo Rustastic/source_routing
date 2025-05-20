@@ -6,6 +6,7 @@ use log::info;
 use network_node::NetworkNode;
 use priority_queue::PriorityQueue;
 use std::{
+    cell::RefCell,
     cmp::Reverse,
     collections::{HashMap, HashSet, VecDeque},
 };
@@ -22,7 +23,7 @@ mod test;
 pub struct Network {
     root: NodeId,
     network: HashMap<NodeId, NetworkNode>,
-    weight: HashMap<(NodeId, NodeId), u64>,
+    weight: RefCell<HashMap<(NodeId, NodeId), u64>>,
     server_list: HashSet<NodeId>,
 }
 
@@ -34,7 +35,7 @@ impl Network {
         Self {
             root,
             network,
-            weight: HashMap::new(),
+            weight: HashMap::new().into(),
             server_list: HashSet::new(),
         }
     }
@@ -97,15 +98,27 @@ impl Network {
         let _ = self.add_link(id, self.root);
         Ok(())
     }
-    pub fn increment_weight(&mut self, id1: NodeId, id2: NodeId) {
-        self.weight
-            .entry((id1, id2))
-            .and_modify(|w| *w += 1)
-            .or_insert(0);
-        self.weight
-            .entry((id1, id2))
-            .and_modify(|w| *w += 1)
-            .or_insert(0);
+    /// Increment weight of every link directed to `id`
+    /// # Errors
+    /// - `IdNotFound`
+    pub fn increment_weight(&mut self, id: NodeId) -> Result<()> {
+        // self.weight
+        //     .entry((id1, id2))
+        //     .and_modify(|w| *w += 1)
+        //     .or_insert(0);
+        for neighbour in self.get(id)?.neighbours.borrow().iter() {
+            self.weight
+                .borrow_mut()
+                .entry((id, *neighbour))
+                .and_modify(|w| *w += 1)
+                .or_insert(0);
+            self.weight
+                .borrow_mut()
+                .entry((*neighbour, id))
+                .and_modify(|w| *w += 1)
+                .or_insert(0);
+        }
+        Ok(())
     }
     /// Compute vector of parent of the network starting from the root
     /// # Errors
@@ -170,8 +183,9 @@ impl Network {
     }
     fn get_weight(&self, id1: NodeId, id2: NodeId) -> u64 {
         self.weight
+            .borrow()
             .get(&(id1, id2))
-            .or(self.weight.get(&(id2, id1)))
+            .or(self.weight.borrow().get(&(id2, id1)))
             .copied()
             .unwrap_or(0)
     }
