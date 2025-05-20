@@ -105,6 +105,9 @@ impl Router {
         self.network.remove_node(id).map(|_| ())
         // .and(self.requester.remove_neighbour(id))
     }
+    pub fn dropped_fragment(&mut self, id1: NodeId, id2: u8) {
+        self.network.increment_weight(id1, id2);
+    }
     /// # Errors
     /// - `Err(IdAlreadyPresent)` with `node_type` set to `NodeType::Drone`
     ///   (assuming a client does not have neighbours not Drone)
