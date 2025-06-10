@@ -184,11 +184,11 @@ impl Network {
             .or(self.weight.borrow().get(&(id2, id1)))
             .copied()
             .unwrap_or(0);
-        if weight > 400 {
-            if let Ok(mut wfield) = self.weight.try_borrow_mut() {
-                *wfield = HashMap::new() ;
-            }
-        }
+        // if weight > 400 {
+        //     if let Ok(mut wfield) = self.weight.try_borrow_mut() {
+        //         *wfield = HashMap::new() ;
+        //     }
+        // }
         weight
     }
     /// Add a node without neighbours to the network
