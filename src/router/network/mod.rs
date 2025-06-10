@@ -178,12 +178,18 @@ impl Network {
         Ok(parents)
     }
     fn get_weight(&self, id1: NodeId, id2: NodeId) -> u64 {
-        self.weight
+        let weight = self.weight
             .borrow()
             .get(&(id1, id2))
             .or(self.weight.borrow().get(&(id2, id1)))
             .copied()
-            .unwrap_or(0)
+            .unwrap_or(0);
+        if weight > 400 {
+            if let Ok(mut wfield) = self.weight.try_borrow_mut() {
+                *wfield = HashMap::new() ;
+            }
+        }
+        weight
     }
     /// Add a node without neighbours to the network
     /// # Errors
