@@ -162,13 +162,18 @@ impl Network {
             let (u, _) = queue.pop().unwrap_or_else(|| unreachable!());
             inside_queue.remove(&u);
             for &v in self.get(u)?.neighbours.borrow().iter().filter_map(|n| {
-                if *n == destination {
-                    Some(n)
-                } else {
-                    self.get(*n)
-                        .ok()
-                        .filter(|node| matches!(node.node_type, NodeType::Drone))
-                        .map(|_| n)
+                // if *n == destination {
+                //     Some(n)
+                // } else {
+                //     self.get(*n)
+                //         .ok()
+                //         .filter(|node| matches!(node.node_type, NodeType::Drone))
+                //         .map(|_| n)
+                // } ;
+                match self.get(*n).ok()?.node_type {
+                    NodeType::Client => Some(n),
+                    _ if destination == *n => Some(n),
+                    _ => None,
                 }
             }) {
                 let new_distance = distance.get(&u).unwrap_or(&u64::MAX) + self.get_weight(u, v);
