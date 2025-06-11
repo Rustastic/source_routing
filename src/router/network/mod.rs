@@ -171,7 +171,7 @@ impl Network {
                 //         .map(|_| n)
                 // } ;
                 match self.get(*n).ok()?.node_type {
-                    NodeType::Client => Some(n),
+                    NodeType::Drone => Some(n),
                     _ if destination == *n => Some(n),
                     _ => None,
                 }
