@@ -161,7 +161,12 @@ impl Network {
         while !queue.is_empty() {
             let (u, _) = queue.pop().unwrap_or_else(|| unreachable!());
             inside_queue.remove(&u);
-            for &v in self.get(u)?.neighbours.borrow().iter() {
+            for &v in self.get(u)?.neighbours.borrow().iter().filter_map(|n| {
+                match self.get(*n).ok()?.node_type {
+                    NodeType::Drone => Some(n),
+                    _ => None,
+                }
+            }) {
                 let new_distance = distance.get(&u).unwrap_or(&u64::MAX) + self.get_weight(u, v);
                 if new_distance < *distance.get(&v).unwrap_or(&u64::MAX) {
                     if inside_queue.contains(&v) {
@@ -178,7 +183,8 @@ impl Network {
         Ok(parents)
     }
     fn get_weight(&self, id1: NodeId, id2: NodeId) -> u64 {
-        let weight = self.weight
+        let weight = self
+            .weight
             .borrow()
             .get(&(id1, id2))
             .or(self.weight.borrow().get(&(id2, id1)))
@@ -186,7 +192,7 @@ impl Network {
             .unwrap_or(0);
         if weight > 400 {
             if let Ok(mut wfield) = self.weight.try_borrow_mut() {
-                *wfield = HashMap::new() ;
+                *wfield = HashMap::new();
             }
         }
         weight
