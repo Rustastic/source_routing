@@ -143,7 +143,7 @@ impl Network {
         }
         Ok(parents)
     }
-    fn dijkstra(&self) -> Result<HashMap<NodeId, Option<NodeId>>> {
+    fn dijkstra(&self, destination: NodeId) -> Result<HashMap<NodeId, Option<NodeId>>> {
         // let mut queue = BinaryHeap::new();
         // queue.push(Reverse(PriorityItem::new(0, self.root)));
         let mut queue = PriorityQueue::new();
@@ -162,9 +162,13 @@ impl Network {
             let (u, _) = queue.pop().unwrap_or_else(|| unreachable!());
             inside_queue.remove(&u);
             for &v in self.get(u)?.neighbours.borrow().iter().filter_map(|n| {
-                match self.get(*n).ok()?.node_type {
-                    NodeType::Drone => Some(n),
-                    _ => None,
+                if *n == destination {
+                    Some(n)
+                } else {
+                    self.get(*n)
+                        .ok()
+                        .filter(|node| matches!(node.node_type, NodeType::Drone))
+                        .map(|_| n)
                 }
             }) {
                 let new_distance = distance.get(&u).unwrap_or(&u64::MAX) + self.get_weight(u, v);
@@ -280,10 +284,13 @@ impl Network {
     }
     /// # Errors
     /// - `Err(RouteNotFound)` if the destionation is unreachable
+    /// - `Err(ParentsMalformed)` if the vector of parents is malformed
     pub fn get_routes(&self, destination: NodeId) -> Result<Path> {
         // let parents = self.bfs().or(Err(RouteNotFound { destination }))?;
         // let path = parents_to_path(&parents, destination)?;
-        let parents = self.dijkstra().or(Err(RouteNotFound { destination }))?;
+        let parents = self
+            .dijkstra(destination)
+            .or(Err(RouteNotFound { destination }))?;
         let path = parents_to_path(&parents, destination)?;
         Ok(path)
     }
