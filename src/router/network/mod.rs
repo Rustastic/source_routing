@@ -330,6 +330,12 @@ impl Network {
         info!("[RouterOf: {}] == {info_str}", self.root);
         println!("[RouterOf: {}] == {info_str}", self.root);
     }
+    pub fn get_node_number(&self) -> usize {
+        self
+            .network
+            .keys()
+            .len()
+    }
 }
 
 /// Returns a path from the vector of parents
