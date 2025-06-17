@@ -13,11 +13,19 @@ mod flood_requester;
 mod network;
 
 #[derive(Debug)]
+enum NetworkStatus {
+    RequestSended,
+    ResponseReceived(usize),
+    Swapped,
+}
+
+#[derive(Debug)]
 pub struct Router {
     id: NodeId,
     node_type: NodeType,
     primary_network: Network,
     secondary_network: Network,
+    status: NetworkStatus,
     requester: FloodRequestFactory,
 }
 
@@ -31,6 +39,7 @@ impl Router {
             node_type,
             primary_network: network.clone(),
             secondary_network: network,
+            status: NetworkStatus::ResponseReceived(0),
             requester: FloodRequestFactory::new(id, node_type),
         }
     }
@@ -56,13 +65,34 @@ impl Router {
 impl Router {
     //methods
     pub fn handle_flood_response(&mut self, resp: &FloodResponse) {
+        match self.status {
+            NetworkStatus::RequestSended => {
+                self.status = NetworkStatus::ResponseReceived(1);
+                self.secondary_network = Network::new(self.id, self.node_type);
+            }
+            NetworkStatus::ResponseReceived(count)
+                if count > self.primary_network.get_node_number() * 60 / 100 =>
+            {
+                self.swap_network();
+            }
+            NetworkStatus::ResponseReceived(count) => {
+                self.status = NetworkStatus::ResponseReceived(count + 1);
+            }
+            NetworkStatus::Swapped => {}
+        }
+
         self.primary_network
+            .update_from_path_trace(&resp.path_trace);
+        self.secondary_network
             .update_from_path_trace(&resp.path_trace);
     }
     /// # Errors
     /// - `Err(RouteNotFound)` if the destionation is unreachable
     pub fn get_source_routing_header(&self, destination: NodeId) -> Result<SourceRoutingHeader> {
-        let path = self.primary_network.get_routes(destination)?;
+        let path = self
+            .primary_network
+            .get_routes(destination)
+            .or_else(|_| self.secondary_network.get_routes(destination))?;
         let header = SourceRoutingHeader::with_first_hop(path).without_loops();
         println!("[RouterOf: {}] header: {header}", self.id);
         info!("[RouterOf: {}] header: {header}", self.id);
@@ -85,37 +115,27 @@ impl Router {
     }
     /// # Returns:
     /// A Vec<Packet> with the size specified in `count`
-    pub fn get_flood_requests(&self, count: usize) -> Vec<Packet> {
+    pub fn get_flood_requests(&mut self, count: usize) -> Vec<Packet> {
+        if !matches!(self.status, NetworkStatus::Swapped) {
+            self.swap_network();
+        }
+        self.status = NetworkStatus::RequestSended;
         self.requester.get_flood_request(count)
     }
-    /*
-    pub fn flood_neighbours(&self) {
-    self.requester.flood_neighbours();
-    }
-    /// # Errors
-    /// - `Err(IdNotFound)` if the `id` is not in the neighbour
-    pub fn flood_with_id(&self, id: NodeId) -> Result<()> {
-        self.requester.flood_with_id(id)
-    }
-    */
-    /// # Errors
-    /// - `Err(RemoveSelfErr)` if the id is the root
-    /// - `Err(IdNotFound)`
-    pub fn drone_crashed(&mut self, id: NodeId) -> Result<()> {
-        self.primary_network.remove_node(id).map(|_| ())
-        // .and(self.requester.remove_neighbour(id))
+    pub fn drone_crashed(&mut self, id: NodeId) {
+        let _ = self.primary_network.remove_node(id);
+        let _ = self.secondary_network.remove_node(id);
     }
     pub fn dropped_fragment(&mut self, id1: NodeId) {
         let _ = self.primary_network.increment_weight(id1);
+        let _ = self.secondary_network.increment_weight(id1);
     }
     /// # Errors
     /// - `Err(IdAlreadyPresent)` with `node_type` set to `NodeType::Drone`
     ///   (assuming a client does not have neighbours not Drone)
-    pub fn add_neighbour(&mut self, id: NodeId) -> Result<()> {
-        self.primary_network.add_neighbour(id)
-        // self.requester
-        //     .add_neighbour(id, sender)
-        //     .and(self.network.add_neighbour(id))
+    pub fn add_neighbour(&mut self, id: NodeId) {
+        let _ = self.primary_network.add_neighbour(id);
+        let _ = self.secondary_network.add_neighbour(id);
     }
     /*
     /// # Errors
@@ -127,9 +147,17 @@ impl Router {
     /// Returns the list of server in the network, used to determine which server is Chat
     /// and which is Media/Text  
     pub fn get_server_list(&self) -> HashSet<NodeId> {
-        self.primary_network.get_server_list()
+        self.primary_network
+            .get_server_list()
+            .into_iter()
+            .chain(self.secondary_network.get_server_list())
+            .collect()
     }
-    pub fn clear_routing_table(&mut self) {
-        self.primary_network = Network::new(self.id, self.node_type);
+    // pub fn clear_routing_table(&mut self) {
+    //     self.primary_network = Network::new(self.id, self.node_type);
+    // }
+    fn swap_network(&mut self) {
+        std::mem::swap(&mut self.primary_network, &mut self.secondary_network);
+        self.status = NetworkStatus::Swapped;
     }
 }
