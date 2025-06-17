@@ -19,7 +19,7 @@ mod network_node;
 mod test;
 
 #[allow(clippy::struct_field_names)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Network {
     root: NodeId,
     network: HashMap<NodeId, NetworkNode>,
