@@ -25,14 +25,13 @@ impl Router {
     //constructors
     #[must_use]
     pub fn new(id: NodeId, node_type: NodeType) -> Self {
-        let requester = FloodRequestFactory::new(id, node_type);
         let network = Network::new(id, node_type);
         Self {
             id,
             node_type,
             primary_network: network.clone(),
             secondary_network: network,
-            requester,
+            requester: FloodRequestFactory::new(id, node_type),
         }
     }
     /*
