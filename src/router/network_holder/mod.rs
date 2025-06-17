@@ -12,7 +12,7 @@ mod network;
 #[derive(Debug)]
 enum NetworkStatus {
     RequestSended,
-    ResponseReceived(usize),
+    ResponseReceived,
     Swapped,
 }
 
@@ -34,7 +34,7 @@ impl NetworkHolder {
             node_type: root_type,
             primary_network: Network::new(root, root_type),
             secondary_network: Network::new(root, root_type),
-            status: NetworkStatus::ResponseReceived(0),
+            status: NetworkStatus::ResponseReceived,
         }
     }
 }
@@ -44,16 +44,16 @@ impl NetworkHolder {
     pub fn received_flood_response(&mut self, response: &FloodResponse) {
         match self.status {
             NetworkStatus::RequestSended => {
-                self.status = NetworkStatus::ResponseReceived(1);
+                self.status = NetworkStatus::ResponseReceived;
                 self.secondary_network = Network::new(self.id, self.node_type);
             }
-            NetworkStatus::ResponseReceived(count)
-                if count > self.primary_network.get_node_number() * 60 / 100 =>
+            NetworkStatus::ResponseReceived
+                if self.secondary_network.get_node_number() > self.primary_network.get_node_number() * 60 / 100 =>
             {
                 self.swap_network();
             }
-            NetworkStatus::ResponseReceived(count) => {
-                self.status = NetworkStatus::ResponseReceived(count + 1);
+            NetworkStatus::ResponseReceived => {
+                self.status = NetworkStatus::ResponseReceived;
             }
             NetworkStatus::Swapped => {}
         }
