@@ -101,13 +101,8 @@ impl Network {
     /// # Errors
     /// - `IdAlreadyPresent`
     pub fn remove_neighbour_link(&mut self, id: NodeId) -> Result<()> {
-        self
-            .get(self.root)?
-            .remove_neighbour(id);
-        self
-            .get(id)?
-            .remove_neighbour(self.root);
-
+        self.get(self.root)?.remove_neighbour(id);
+        self.get(id)?.remove_neighbour(self.root);
 
         todo!()
     }
