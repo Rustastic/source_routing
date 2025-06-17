@@ -331,10 +331,7 @@ impl Network {
         println!("[RouterOf: {}] == {info_str}", self.root);
     }
     pub fn get_node_number(&self) -> usize {
-        self
-            .network
-            .keys()
-            .len()
+        self.network.keys().len()
     }
 }
 
