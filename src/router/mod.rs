@@ -12,11 +12,9 @@ use wg_2024::{
 mod flood_requester;
 mod network_holder;
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct Router {
     id: NodeId,
-    node_type: NodeType,
     network_holder: NetworkHolder,
     requester: FloodRequestFactory,
 }
@@ -27,7 +25,6 @@ impl Router {
     pub fn new(id: NodeId, node_type: NodeType) -> Self {
         Self {
             id,
-            node_type,
             network_holder: NetworkHolder::new(id, node_type),
             requester: FloodRequestFactory::new(id, node_type),
         }
