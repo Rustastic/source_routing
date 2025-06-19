@@ -48,8 +48,10 @@ impl FloodRequestFactory {
     //         })
     //         .collect()
     // }
-    pub fn get_flood_request(&self) -> Packet {
-        self.flood_request_to_packet(self.create_request())
+    pub fn get_flood_request(&self, count: usize) -> Vec<Packet> {
+        (0..count)
+            .map(|_| self.flood_request_to_packet(self.create_request()))
+            .collect()
     }
     /// send a `flood request` only to `id`
     /// # Errors

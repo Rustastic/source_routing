@@ -19,7 +19,7 @@ mod network_node;
 mod test;
 
 #[allow(clippy::struct_field_names)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Network {
     root: NodeId,
     network: HashMap<NodeId, NetworkNode>,
@@ -97,6 +97,14 @@ impl Network {
         self.add_empty_node(id, NodeType::Drone)?;
         let _ = self.add_link(id, self.root);
         Ok(())
+    }
+    /// # Errors
+    /// - `IdAlreadyPresent`
+    pub fn remove_neighbour_link(&mut self, id: NodeId) -> Result<()> {
+        self.get(self.root)?.remove_neighbour(id);
+        self.get(id)?.remove_neighbour(self.root);
+
+        todo!()
     }
     /// Increment weight of every link directed to `id`
     /// # Errors
@@ -329,6 +337,9 @@ impl Network {
         }
         info!("[RouterOf: {}] == {info_str}", self.root);
         println!("[RouterOf: {}] == {info_str}", self.root);
+    }
+    pub fn get_node_number(&self) -> usize {
+        self.network.keys().len()
     }
 }
 
