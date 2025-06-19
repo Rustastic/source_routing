@@ -48,7 +48,7 @@ impl NetworkHolder {
                 self.secondary_network = Network::new(self.id, self.node_type);
             }
             NetworkStatus::ResponseReceived
-                if self.secondary_network.get_node_number() > self.primary_network.get_node_number() * 60 / 100 =>
+                if self.secondary_network.get_node_number() > self.primary_network.get_node_number() * 30 / 100 =>
             {
                 self.swap_network();
             }
