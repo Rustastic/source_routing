@@ -103,6 +103,8 @@ impl Network {
     pub fn remove_neighbour_link(&mut self, id: NodeId) -> Result<()> {
         self.get(self.root)?.remove_neighbour(id);
         self.get(id)?.remove_neighbour(self.root);
+
+        Ok(())
     }
     /// Increment weight of every link directed to `id`
     /// # Errors
